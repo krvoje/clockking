@@ -20,6 +20,7 @@ const DB_LOCATION: &str = "./.clockking/db.json";
 const CLOCK_ENTRIES_TABLE: &str = "clock_entries";
 const CLOCK_ENTRY_FORM: &str = "edit_clock_entry";
 const TOTAL_HOURS_CLOCKED: &str = "total_hours_clocked";
+const TOTAL_HOURS: &str = "total_hours";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct ClockEntry {
@@ -85,13 +86,14 @@ fn hours_minutes_string(duration: Duration) -> String {
 fn hours_minutes_from_total_minutes(total_minutes: i64) -> String {
     let hours = total_minutes / 60;
     let minutes = total_minutes % 60;
-    format!("{}h {}m", hours, minutes)
+    format!("{}h {:02$}m", hours, minutes, 2)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut siv = Cursive::default();
     let items = read_db();
     let total_minutes = items.iter().map(|it| it.duration().num_minutes()).sum();
+    let total_minutes_clocked = items.iter().filter(|it| it.is_clocked).map(|it| it.duration().num_minutes()).sum();
 
     let mut table: TableView<ClockEntry, ClockEntryColumn> = TableView::<ClockEntry, ClockEntryColumn>::new()
         .column(ClockEntryColumn::From, ClockEntryColumn::From.as_str(), |c| {c.width_percent(10).align(HAlign::Center) })
@@ -115,7 +117,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .min_size((100,20))
                 )
                 .child(
-                    TextView::new(total_hours_clocked(total_minutes))
+                    TextView::new(minutes_to_hours_clocked("Total hours", total_minutes))
+                        .with_name(TOTAL_HOURS)
+                )
+                .child(
+                    TextView::new(minutes_to_hours_clocked("Total hours clocked ", total_minutes_clocked))
                         .with_name(TOTAL_HOURS_CLOCKED)
                 )
                 .child(
@@ -145,8 +151,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(siv.run())
 }
 
-fn total_hours_clocked(total_minutes: i64) -> String {
-    format!("Total clocked today: {}", hours_minutes_from_total_minutes(total_minutes))
+fn minutes_to_hours_clocked(prompt: &str, total_minutes: i64) -> String {
+    format!("{}: {}", prompt, hours_minutes_from_total_minutes(total_minutes))
 }
 
 fn add_new_entry(s: &mut Cursive) {
@@ -154,14 +160,25 @@ fn add_new_entry(s: &mut Cursive) {
 }
 
 fn delete_current_entry(s: &mut Cursive) {
-    let total_minutes = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+    s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         t.item().map(|index| t.remove_item(index));
         let items = t.borrow_items();
         save_to_db(items);
-        items.iter().map(|it| it.duration().num_minutes()).sum()
     }).unwrap();
+    update_stats(s)
+}
+
+fn update_stats(s: &mut Cursive) {
+    let (total_minutes, total_minutes_clocked) = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+        let items = t.borrow_items();
+        (items.iter().map(|it| it.duration().num_minutes()).sum(),
+         items.iter().filter(|it|it.is_clocked).map(|it| it.duration().num_minutes()).sum())
+    }).unwrap();
+    s.call_on_name(TOTAL_HOURS, move |t: &mut TextView| {
+        t.set_content(minutes_to_hours_clocked("Total hours", total_minutes));
+    });
     s.call_on_name(TOTAL_HOURS_CLOCKED, move |t: &mut TextView| {
-        t.set_content(total_hours_clocked(total_minutes));
+        t.set_content(minutes_to_hours_clocked("Total hours clocked", total_minutes_clocked));
     });
 }
 
@@ -174,6 +191,7 @@ fn mark_current_entry_as_clocked(s: &mut Cursive) {
         let items = t.borrow_items();
         save_to_db(items);
     }).unwrap();
+    update_stats(s);
 }
 
 fn edit_entry(s: &mut Cursive, index: usize) {
@@ -201,19 +219,15 @@ fn edit_entry_form(current_entry: Option<ClockEntry>, index: usize) -> NamedView
                 description: get_text(s, ClockEntryColumn::Description.as_str()),
                 is_clocked: get_bool(s, ClockEntryColumn::IsClocked.as_str()) ,
             };
-            let total_minutes = s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
+            s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
                 if current_entry.is_some() {
                     table.remove_item(index);
                 }
                 table.insert_item(new_entry);
-
                 let items = table.borrow_items();
                 save_to_db(items);
-                items.iter().map(|it|it.duration().num_minutes()).sum()
             }).expect("Unable to get clock entries table");
-            s.call_on_name(TOTAL_HOURS_CLOCKED, move |t: &mut TextView| {
-                t.set_content(total_hours_clocked(total_minutes));
-            });
+            update_stats(s);
             s.pop_layer();
         }).with_name(CLOCK_ENTRY_FORM)
 }
