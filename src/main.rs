@@ -10,17 +10,18 @@ use chrono::prelude::*;
 use cursive::{Cursive, CursiveExt};
 use cursive::align::HAlign;
 use cursive::direction::Orientation;
-use cursive::event::Key;
+use cursive::event::{Key};
 use cursive::traits::*;
-use cursive::views::{Button, Checkbox, Dialog, DummyView, LinearLayout, ListView, NamedView, ResizedView, SelectView, TextArea, TextView};
+use cursive::views::{Button, Checkbox, Dialog, DummyView, LinearLayout, ListView, NamedView, OnEventView, ResizedView, SelectView, TextArea, TextView};
 use cursive_table_view::{TableView, TableViewItem};
 use serde::{Deserialize, Serialize};
 
 const DB_LOCATION: &str = "./.clockking/db.json";
 const CLOCK_ENTRIES_TABLE: &str = "clock_entries";
 const CLOCK_ENTRY_FORM: &str = "edit_clock_entry";
-const TOTAL_HOURS_CLOCKED: &str = "total_hours_clocked";
-const TOTAL_HOURS: &str = "total_hours";
+const TOTAL_HOURS_CLOCKED: &str   = "Total clocked";
+const TOTAL_HOURS_REMAINING: &str = "Left to clock";
+const TOTAL_HOURS: &str           = "Total hours";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct ClockEntry {
@@ -112,17 +113,26 @@ fn main() -> Result<(), Box<dyn Error>> {
         Dialog::around(
             LinearLayout::new(Orientation::Vertical)
                 .child(
-                    table
-                        .with_name(CLOCK_ENTRIES_TABLE)
-                        .min_size((100,20))
+                    OnEventView::new(
+                        table
+                            .with_name(CLOCK_ENTRIES_TABLE)
+                            .min_size((100,20))
+                    ).on_event(Key::Del, |s| delete_current_entry(s))
+                    .on_event('d', |s| delete_current_entry(s))
+                    .on_event(' ',|s| mark_current_entry_as_clocked(s))
+                    .on_event('a', |s| add_new_entry(s))
                 )
                 .child(
-                    TextView::new(minutes_to_hours_clocked("Total hours", total_minutes))
+                    TextView::new(minutes_to_hours_clocked(TOTAL_HOURS, total_minutes))
                         .with_name(TOTAL_HOURS)
                 )
                 .child(
-                    TextView::new(minutes_to_hours_clocked("Total hours clocked ", total_minutes_clocked))
+                    TextView::new(minutes_to_hours_clocked(TOTAL_HOURS_CLOCKED, total_minutes_clocked))
                         .with_name(TOTAL_HOURS_CLOCKED)
+                )
+                .child(
+                    TextView::new(minutes_to_hours_clocked(TOTAL_HOURS_REMAINING, total_minutes - total_minutes_clocked))
+                        .with_name(TOTAL_HOURS_REMAINING)
                 )
                 .child(
                     LinearLayout::new(Orientation::Horizontal)
@@ -135,10 +145,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         ).title("Clock King 👑")
     );
 
-    siv.add_global_callback('a', |s| add_new_entry(s));
-    siv.add_global_callback('d',|s| delete_current_entry(s));
-    siv.add_global_callback(Key::Del,|s| delete_current_entry(s));
-    siv.add_global_callback(' ',|s| mark_current_entry_as_clocked(s));
     siv.add_global_callback('q', Cursive::quit);
 
     siv.add_global_callback(Key::Esc,|s| {
@@ -152,7 +158,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn minutes_to_hours_clocked(prompt: &str, total_minutes: i64) -> String {
-    format!("{}: {}", prompt, hours_minutes_from_total_minutes(total_minutes))
+    format!("{}:\t{}", prompt, hours_minutes_from_total_minutes(total_minutes))
 }
 
 fn add_new_entry(s: &mut Cursive) {
@@ -175,10 +181,13 @@ fn update_stats(s: &mut Cursive) {
          items.iter().filter(|it|it.is_clocked).map(|it| it.duration().num_minutes()).sum())
     }).unwrap();
     s.call_on_name(TOTAL_HOURS, move |t: &mut TextView| {
-        t.set_content(minutes_to_hours_clocked("Total hours", total_minutes));
+        t.set_content(minutes_to_hours_clocked(TOTAL_HOURS, total_minutes));
     });
     s.call_on_name(TOTAL_HOURS_CLOCKED, move |t: &mut TextView| {
-        t.set_content(minutes_to_hours_clocked("Total hours clocked", total_minutes_clocked));
+        t.set_content(minutes_to_hours_clocked(TOTAL_HOURS_CLOCKED, total_minutes_clocked));
+    });
+    s.call_on_name(TOTAL_HOURS_REMAINING, move |t: &mut TextView| {
+        t.set_content(minutes_to_hours_clocked(TOTAL_HOURS_REMAINING, total_minutes - total_minutes_clocked));
     });
 }
 
