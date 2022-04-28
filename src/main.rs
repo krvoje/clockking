@@ -245,7 +245,6 @@ fn time_input(col: ClockEntryColumn, value: Option<NaiveTime>) -> NamedView<Resi
     let content = if value.is_some() {
         value.map(|it| it.format("%H:%M").to_string()).expect("Time input entry should be some value")
     } else {
-        eprintln!("{}", now());
         now()
     };
     let entries = daily_clock_entries();
@@ -306,25 +305,24 @@ fn get_bool(s: &mut Cursive, input_name: &str) -> bool {
     }).expect(&format!("{} should be defined", input_name))
 }
 
+fn granularity() -> u32 {
+    15
+}
+
 fn now() -> String {
     let now = Local::now();
     let hour = now.hour();
     let minute = now.minute();
-    let minute15 = if minute < 15 {
-        0
-    } else if minute < 30 {
-        15
-    } else if minute < 45 {
-        30
-    } else {
-        45
-    };
-    format!("{:02$}:{:02$}", hour, minute15, 2)
+    format!(
+        "{:02$}:{:02$}",
+        hour,
+        (minute / granularity()) * 15,
+        2)
 }
 
 fn daily_clock_entries() -> Vec<String> {
     (0..24).flat_map(|hour| {
-        [0, 15, 30, 45].iter().map(|minute| {
+        (0..60).step_by(usize::try_from(granularity()).unwrap()).map(|minute| {
             format!("{:02$}:{:02$}", hour, minute, 2)
         }).collect::<Vec<String>>()
     }).collect()
