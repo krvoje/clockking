@@ -118,9 +118,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                             .with_name(CLOCK_ENTRIES_TABLE)
                             .min_size((100,20))
                     ).on_event(Key::Del, |s| delete_current_entry(s))
-                    .on_event('d', |s| delete_current_entry(s))
-                    .on_event(' ',|s| mark_current_entry_as_clocked(s))
-                    .on_event('a', |s| add_new_entry(s))
+                        .on_event('d', |s| delete_current_entry(s))
+                        .on_event(' ',|s| mark_current_entry_as_clocked(s))
+                        .on_event('a', |s| add_new_entry(s))
                 )
                 .child(
                     TextView::new(minutes_to_hours_clocked(TOTAL_HOURS, total_minutes))
@@ -166,12 +166,20 @@ fn add_new_entry(s: &mut Cursive) {
 }
 
 fn delete_current_entry(s: &mut Cursive) {
-    s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-        t.item().map(|index| t.remove_item(index));
-        let items = t.borrow_items();
-        save_to_db(items);
-    }).unwrap();
-    update_stats(s)
+    s.add_layer(
+        cursive_extras::confirm_dialog(
+            "Delete entry",
+            "Are you sure?",
+            |s| {
+                s.pop_layer();
+                s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+                    t.item().map(|index| t.remove_item(index));
+                    let items = t.borrow_items();
+                    save_to_db(items);
+                }).unwrap();
+                update_stats(s)
+            }
+        ));
 }
 
 fn update_stats(s: &mut Cursive) {

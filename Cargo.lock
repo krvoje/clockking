@@ -57,6 +57,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "cursive",
+ "cursive-extras",
  "cursive_table_view",
  "serde",
  "serde_json",
@@ -127,6 +128,16 @@ dependencies = [
  "term_size",
  "unicode-segmentation",
  "unicode-width",
+]
+
+[[package]]
+name = "cursive-extras"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df7968de69acd496970f763508808507399396905eb72de8223d8798697f272a"
+dependencies = [
+ "crossbeam-channel",
+ "cursive_core",
 ]
 
 [[package]]
