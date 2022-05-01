@@ -1,5 +1,5 @@
 use chrono::{Duration, NaiveTime};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ClockEntry {

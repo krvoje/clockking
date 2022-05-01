@@ -2,7 +2,9 @@ extern crate cursive_table_view;
 
 use std::cmp::Ordering;
 use std::error::Error;
+use std::ops::Add;
 
+use chrono::Duration;
 use cursive::{Cursive, CursiveExt};
 use cursive::align::HAlign;
 use cursive::direction::Orientation;
@@ -12,6 +14,7 @@ use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, NamedVie
 use cursive_table_view::{TableView, TableViewItem};
 
 use crate::model::*;
+use crate::Orientation::Vertical;
 
 mod db;
 mod model;
@@ -70,7 +73,6 @@ impl TableViewItem<ClockEntryColumn> for ClockEntry {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut siv = Cursive::default();
-    let items = db::read_db();
 
     let mut table: TableView<ClockEntry, ClockEntryColumn> = TableView::<ClockEntry, ClockEntryColumn>::new()
         .column(ClockEntryColumn::From, ClockEntryColumn::From.as_str(), |c| {c.width_percent(10).align(HAlign::Center) })
@@ -78,7 +80,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .column(ClockEntryColumn::Description, ClockEntryColumn::Description.as_str(), |c| {c.align(HAlign::Center)})
         .column(ClockEntryColumn::Duration, ClockEntryColumn::Duration.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
         .column(ClockEntryColumn::IsClocked, ClockEntryColumn::IsClocked.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
-        .items(items)
+        .items(db::read_db())
         ;
 
     table.set_on_submit(move |s: &mut Cursive, _: usize, index: usize| {
@@ -99,16 +101,19 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .on_event('a', |s| add_new_entry(s))
                 )
                 .child(
-                    TextView::new(TOTAL_HOURS)
-                        .with_name(TOTAL_HOURS)
-                )
-                .child(
-                    TextView::new(TOTAL_HOURS_CLOCKED)
-                        .with_name(TOTAL_HOURS_CLOCKED)
-                )
-                .child(
-                    TextView::new(TOTAL_HOURS_REMAINING)
-                        .with_name(TOTAL_HOURS_REMAINING)
+                    LinearLayout::new(Vertical)
+                        .child(
+                            TextView::new(TOTAL_HOURS)
+                                .with_name(TOTAL_HOURS)
+                        )
+                        .child(
+                            TextView::new(TOTAL_HOURS_CLOCKED)
+                                .with_name(TOTAL_HOURS_CLOCKED)
+                        )
+                        .child(
+                            TextView::new(TOTAL_HOURS_REMAINING)
+                                .with_name(TOTAL_HOURS_REMAINING)
+                        )
                 )
                 .child(
                     LinearLayout::new(Orientation::Horizontal)
@@ -136,7 +141,22 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn add_new_entry(s: &mut Cursive) {
-    s.add_layer(edit_entry_form(None, 0));
+    let template_entry: Option<ClockEntry> = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+        t.item().map(|it| t.borrow_item(it).map(|it| ClockEntry {
+            from: it.to,
+            to: it.to.add(Duration::minutes(60)),
+            description: String::from(""),
+            is_clocked: false,
+        })).flatten()
+    }).unwrap();
+
+    s.add_layer(add_entry_form(
+        template_entry.as_ref()
+    ));
+}
+
+fn add_entry_form(current_entry: Option<&ClockEntry>) -> NamedView<Dialog> {
+    entry_form("Add Clock Entry ⏰", current_entry, None)
 }
 
 fn delete_current_entry(s: &mut Cursive) {
@@ -186,33 +206,38 @@ fn mark_current_entry_as_clocked(s: &mut Cursive) {
 }
 
 fn edit_entry(s: &mut Cursive, index: usize) {
-    let current_entry = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-        t.borrow_item(index).expect("Unable to borrow item for edit").clone()
-    });
-    s.add_layer(edit_entry_form(current_entry, index));
+    let form = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+        let current_entry = t.borrow_item(index).map(|it| it.clone());
+        edit_entry_form(current_entry.as_ref(), index)
+    }).unwrap();
+    s.add_layer(form);
 }
 
-fn edit_entry_form(current_entry: Option<ClockEntry>, index: usize) -> NamedView<Dialog> {
+fn edit_entry_form(current_entry: Option<&ClockEntry>, index: usize) -> NamedView<Dialog> {
+    entry_form("Edit Clock Entry ⏰", current_entry, Some(index))
+}
+
+fn entry_form(prompt: &str, entry: Option<&ClockEntry>, index: Option<usize>) -> NamedView<Dialog> {
     Dialog::new()
-        .title("Edit Clock Entry ⏰")
+        .title(prompt)
         .button("Cancel", |s| { s.pop_layer(); })
         .content(
             ListView::new()
                 .child(
                     ClockEntryColumn::From.as_str(),
-                    time_picker::new(ClockEntryColumn::From, current_entry.clone().map(|it| it.from))
+                    time_picker::new(ClockEntryColumn::From, entry.map(|it| it.from))
                 )
                 .child(
                     ClockEntryColumn::To.as_str(),
-                    time_picker::new(ClockEntryColumn::To, current_entry.clone().map(|it|it.to))
+                    time_picker::new(ClockEntryColumn::To, entry.map(|it|it.to))
                 )
                 .child(
                     ClockEntryColumn::Description.as_str(),
-                    input::text_area_input(ClockEntryColumn::Description, current_entry.clone().map(|it| it.description))
+                    input::text_area_input(ClockEntryColumn::Description, entry.map(|it| it.description.clone()))
                 )
                 .child(
                     ClockEntryColumn::IsClocked.as_str(),
-                    input::checkbox_input(ClockEntryColumn::IsClocked, current_entry.clone().map(|it| it.is_clocked))
+                    input::checkbox_input(ClockEntryColumn::IsClocked, entry.map(|it| it.is_clocked))
                 )
         )
         .button("Ok", move |s| {
@@ -223,9 +248,7 @@ fn edit_entry_form(current_entry: Option<ClockEntry>, index: usize) -> NamedView
                 is_clocked: input::get_bool(s, ClockEntryColumn::IsClocked.as_str()) ,
             };
             s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
-                if current_entry.is_some() {
-                    table.remove_item(index);
-                }
+                index.map(|i| table.remove_item(i));
                 table.insert_item(new_entry);
                 let items = table.borrow_items();
                 db::save_to_db(items);

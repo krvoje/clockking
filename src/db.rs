@@ -1,5 +1,6 @@
 use std::fs::{create_dir_all, File};
 use std::io::{BufReader, BufWriter};
+
 use crate::ClockEntry;
 
 const DB_LOCATION: &str = "./.clockking/db.json";

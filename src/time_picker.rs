@@ -2,8 +2,9 @@ use chrono::Local;
 use chrono::prelude::*;
 use cursive::align::HAlign;
 use cursive::Cursive;
-use cursive::views::{NamedView, ResizedView, SelectView};
 use cursive::traits::*;
+use cursive::views::{NamedView, ResizedView, SelectView};
+
 use crate::ClockEntryColumn;
 
 pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>) -> NamedView<ResizedView<SelectView>> {
