@@ -73,6 +73,7 @@ impl TableViewItem<ClockEntryColumn> for ClockEntry {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut siv = Cursive::default();
+    siv.set_user_data(GlobalContext::new());
 
     let mut table: TableView<ClockEntry, ClockEntryColumn> = TableView::<ClockEntry, ClockEntryColumn>::new()
         .column(ClockEntryColumn::From, ClockEntryColumn::From.as_str(), |c| {c.width_percent(10).align(HAlign::Center) })
@@ -97,6 +98,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             .min_size((100,20))
                     ).on_event(Key::Del, |s| delete_current_entry(s))
                         .on_event('d', |s| delete_current_entry(s))
+                        .on_event('u', |s| undo_delete(s))
                         .on_event(' ',|s| mark_current_entry_as_clocked(s))
                         .on_event('a', |s| add_new_entry(s))
                 )
@@ -118,9 +120,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .child(
                     LinearLayout::new(Orientation::Horizontal)
                         .child(Button::new("(A)dd", |s| add_new_entry(s)))
-                        .child(DummyView.fixed_width(50))
+                        .child(DummyView.fixed_width(25))
                         .child(Button::new("(D)elete", |s| delete_current_entry(s)))
-                        .child(DummyView.fixed_width(50))
+                        .child(DummyView.fixed_width(25))
+                        .child(Button::new("(U)ndo Delete", |s| undo_delete(s)))
+                        .child(DummyView.fixed_width(25))
                         .child(Button::new("(Q)uit", |s| s.quit()))
                 )
         ).title("Clock King 👑")
@@ -166,14 +170,28 @@ fn delete_current_entry(s: &mut Cursive) {
             "Are you sure?",
             |s| {
                 s.pop_layer();
-                s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-                    t.item().map(|index| t.remove_item(index));
+                let deleted = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
                     let items = t.borrow_items();
                     db::save_to_db(items);
+                    t.item().map(|index| t.remove_item(index)).flatten()
                 }).unwrap();
+                s.user_data::<GlobalContext>().map(|it| it.delete(deleted));
                 update_stats(s)
             }
         ));
+}
+
+fn undo_delete(s: &mut Cursive) {
+    s.user_data::<GlobalContext>().map(|it| {
+        it.undo()
+    }).flatten()
+        .map(|deleted| {
+        s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+            t.insert_item(deleted);
+            db::save_to_db(t.borrow_items());
+        });
+    });
+    update_stats(s);
 }
 
 fn update_stats(s: &mut Cursive) {
