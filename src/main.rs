@@ -171,9 +171,9 @@ fn delete_current_entry(s: &mut Cursive) {
             |s| {
                 s.pop_layer();
                 let deleted = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-                    let items = t.borrow_items();
-                    db::save_to_db(items);
-                    t.item().map(|index| t.remove_item(index)).flatten()
+                    let item = t.item().map(|index| t.remove_item(index)).flatten();
+                    db::save_to_db(t.borrow_items());
+                    item
                 }).unwrap();
                 s.user_data::<GlobalContext>().map(|it| it.delete(deleted));
                 update_stats(s)
