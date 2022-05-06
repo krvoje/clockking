@@ -12,23 +12,23 @@ pub fn format_hms(granularity: Granularity, total_seconds: i64) -> String {
     let seconds = total_seconds % 60;
     
     match granularity {
-        Granularity::Hour => format!("{}h", hours),
-        Granularity::Half => format!("{}h {:02$}m", hours, minutes / 30 * 30, 2),
-        Granularity::Quarter => format!("{}h {:02$}m", hours, minutes / 15 * 15, 2),
-        Granularity::FiveMinute => format!("{}h {:02$}m", hours, minutes / 5 * 5, 2),
-        Granularity::Minute => format!("{}h {:02$}m", hours, minutes, 2),
-        Granularity::Second => format!("{}h {:03$}m {:03$}s", hours, minutes, seconds, 2),
+        Granularity::Relaxed => format!("{}h", hours),
+        Granularity::Reasonable => format!("{}h {:02$}m", hours, minutes / 30 * 30, 2),
+        Granularity::Detailed => format!("{}h {:02$}m", hours, minutes / 15 * 15, 2),
+        Granularity::Paranoid => format!("{}h {:02$}m", hours, minutes / 5 * 5, 2),
+        Granularity::OCD => format!("{}h {:02$}m", hours, minutes, 2),
+        Granularity::Scientific => format!("{}h {:03$}m {:03$}s", hours, minutes, seconds, 2),
     }
 }
 
 pub fn format_clock(granularity: Granularity, hours: u32, minutes: u32, seconds: u32) -> String {
     match granularity {
-        Granularity::Hour => format!("{}:00", hours),
-        Granularity::Half => format!("{:02$}:{:02$}", hours, (minutes / 30) * 30, 2),
-        Granularity::Quarter => format!("{:02$}:{:02$}", hours, (minutes / 15) * 15, 2),
-        Granularity::FiveMinute => format!("{:02$}:{:02$}", hours, (minutes / 5) * 5, 2),
-        Granularity::Minute => format!("{:02$}:{:02$}", hours, minutes, 2),
-        Granularity::Second => format!("{:03$}:{:03$}:{:03$}", hours, minutes, seconds, 2),
+        Granularity::Relaxed => format!("{}:00", hours),
+        Granularity::Reasonable => format!("{:02$}:{:02$}", hours, (minutes / 30) * 30, 2),
+        Granularity::Detailed => format!("{:02$}:{:02$}", hours, (minutes / 15) * 15, 2),
+        Granularity::Paranoid => format!("{:02$}:{:02$}", hours, (minutes / 5) * 5, 2),
+        Granularity::OCD => format!("{:02$}:{:02$}", hours, minutes, 2),
+        Granularity::Scientific => format!("{:03$}:{:03$}:{:03$}", hours, minutes, seconds, 2),
     }
 }
 

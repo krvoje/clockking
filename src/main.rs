@@ -53,11 +53,12 @@ impl ClockEntryColumn {
 
 impl TableViewItem<ClockEntryColumn> for ClockEntry {
     fn to_column(&self, column: ClockEntryColumn) -> String {
+        let granularity = Granularity::OCD;
         match column {
-            ClockEntryColumn::From => self.from.format("%H:%M:%S").to_string(),
-            ClockEntryColumn::To => self.to.format("%H:%M:%S").to_string(),
+            ClockEntryColumn::From => format::format_naive_time(granularity, self.from),
+            ClockEntryColumn::To => format::format_naive_time(granularity, self.to),
             ClockEntryColumn::Description => self.description.to_string(),
-            ClockEntryColumn::Duration => format::format_hms(Granularity::Minute, self.duration().num_seconds()),
+            ClockEntryColumn::Duration => format::format_hms(Granularity::OCD, self.duration().num_seconds()),
             ClockEntryColumn::IsClocked => if self.is_clocked { "[x]".to_string() } else { "[ ]".to_string() },
         }
     }
@@ -77,28 +78,29 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut siv = Cursive::default();
     siv.set_user_data(GlobalContext::new());
 
+    let initial_clock_king = db::read_db();
+
     let mut table: TableView<ClockEntry, ClockEntryColumn> = TableView::<ClockEntry, ClockEntryColumn>::new()
         .column(ClockEntryColumn::From, ClockEntryColumn::From.as_str(), |c| {c.width_percent(10).align(HAlign::Center) })
         .column(ClockEntryColumn::To, ClockEntryColumn::To.as_str(), |c| {c.width_percent(10).align(HAlign::Center)})
         .column(ClockEntryColumn::Description, ClockEntryColumn::Description.as_str(), |c| {c.align(HAlign::Center)})
         .column(ClockEntryColumn::Duration, ClockEntryColumn::Duration.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
         .column(ClockEntryColumn::IsClocked, ClockEntryColumn::IsClocked.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
-        .items(db::read_db())
+        .items(initial_clock_king.clock_entries)
         ;
 
 
     table.set_on_submit(move |s: &mut Cursive, _: usize, index: usize| {
-    let granularity = granularity::get_granularity(s);
-        edit_entry(s,  index, granularity);
+        edit_entry(s,  index);
     });
 
     siv.add_layer(
         Dialog::around(
             LinearLayout::new(Orientation::Vertical)
                 .child(
-                LinearLayout::new(Orientation::Horizontal)
+                    LinearLayout::new(Orientation::Horizontal)
                         .child(TextView::new("Time granularity:").min_width(20))
-                        .child(granularity::new())
+                        .child(granularity::new(initial_clock_king.granularity))
                 )
                 .child(
                     OnEventView::new(
@@ -182,10 +184,14 @@ fn delete_current_entry(s: &mut Cursive) {
             "Delete entry",
             "Are you sure?",
             |s| {
+                let granularity = granularity::get_granularity(s);
                 s.pop_layer();
                 let deleted = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
                     let item = t.item().map(|index| t.remove_item(index)).flatten();
-                    db::save_to_db(t.borrow_items());
+                    db::save_to_db(ClockKing {
+                        clock_entries: t.borrow_items().to_vec(),
+                        granularity,
+                    });
                     item
                 }).unwrap();
                 s.user_data::<GlobalContext>().map(|it| it.delete(deleted));
@@ -199,11 +205,15 @@ fn undo_delete(s: &mut Cursive) {
         it.undo()
     }).flatten()
         .map(|deleted| {
-        s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-            t.insert_item(deleted);
-            db::save_to_db(t.borrow_items());
+            let granularity = granularity::get_granularity(s);
+            s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+                t.insert_item(deleted);
+                db::save_to_db(ClockKing {
+                    clock_entries: t.borrow_items().to_vec(),
+                    granularity,
+                });
+            });
         });
-    });
     update_stats(s);
 }
 
@@ -226,18 +236,23 @@ fn update_stats(s: &mut Cursive) {
 }
 
 fn mark_current_entry_as_clocked(s: &mut Cursive) {
+    let granularity = granularity::get_granularity(s);
     s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         t.item().map(|index| {
             let mut item = t.borrow_item_mut(index).expect("No entry at current index");
             item.is_clocked = !item.is_clocked;
         });
         let items = t.borrow_items();
-        db::save_to_db(items);
+        db::save_to_db(ClockKing {
+            clock_entries: items.to_vec(),
+            granularity,
+        });
     }).unwrap();
     update_stats(s);
 }
 
-fn edit_entry(s: &mut Cursive, index: usize, granularity: Granularity) {
+fn edit_entry(s: &mut Cursive, index: usize) {
+    let granularity = granularity::get_granularity(s);
     let form = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         let current_entry = t.borrow_item(index).map(|it| it.clone());
         edit_entry_form(current_entry.as_ref(), index, granularity)
@@ -279,11 +294,15 @@ fn entry_form(prompt: &str, entry: Option<&ClockEntry>, index: Option<usize>, gr
                 description: input::get_text(s, ClockEntryColumn::Description.as_str()),
                 is_clocked: input::get_bool(s, ClockEntryColumn::IsClocked.as_str()) ,
             };
+            let granularity = granularity::get_granularity(s);
             s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
                 index.map(|i| table.remove_item(i));
                 table.insert_item(new_entry);
                 let items = table.borrow_items();
-                db::save_to_db(items);
+                db::save_to_db( ClockKing {
+                    clock_entries: items.to_vec(),
+                    granularity,
+                });
             }).expect("Unable to get clock entries table");
             update_stats(s);
             s.pop_layer();

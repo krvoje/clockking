@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use chrono::{Duration, NaiveTime};
 use serde::{Deserialize, Serialize};
+use crate::Granularity;
 
 const UNDO_BUFFER_SIZE: usize = 20;
 
@@ -28,6 +29,12 @@ impl GlobalContext {
     pub fn undo(&mut self) -> Option<ClockEntry> {
         self.deleted.pop_back()
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ClockKing {
+    pub clock_entries: Vec<ClockEntry>,
+    pub granularity: Granularity,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

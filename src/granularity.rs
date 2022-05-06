@@ -1,30 +1,31 @@
 use chrono::{NaiveTime, Timelike};
 use cursive::{Cursive, traits::Nameable, views::{NamedView, SelectView}};
 use cursive_table_view::TableView;
+use serde::{Deserialize, Serialize};
 
-use crate::{CLOCK_ENTRIES_TABLE, ClockEntryColumn, db, model::ClockEntry, update_stats};
+use crate::{CLOCK_ENTRIES_TABLE, ClockEntryColumn, ClockKing, db, model::ClockEntry, update_stats};
 
 const GRANULARITY: &str = "Granularity";
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub enum Granularity {
-    Hour,
-    Half,
-    Quarter,
-    FiveMinute,
-    Minute,
-    Second,
+    Relaxed,
+    Reasonable,
+    Detailed,
+    Paranoid,
+    OCD,
+    Scientific,
 }
 
-pub fn new() -> NamedView<SelectView<Granularity>> {
+pub fn new(selected_granularity: Granularity) -> NamedView<SelectView<Granularity>> {
     let mut view = SelectView::new().popup();
-    view.add_item("Relaxed", Granularity::Hour);
-    view.add_item("Reasonable", Granularity::Half);
-    view.add_item("Detailed", Granularity::Quarter);
-    view.add_item("Paranoid", Granularity::FiveMinute);
-    view.add_item("OCD", Granularity::Minute);
-    view.add_item("Scientific", Granularity::Second);
-    view.set_selection(2);
+    view.add_item("Relaxed", Granularity::Relaxed);
+    view.add_item("Reasonable", Granularity::Reasonable);
+    view.add_item("Detailed", Granularity::Detailed);
+    view.add_item("Paranoid", Granularity::Paranoid);
+    view.add_item("OCD", Granularity::OCD);
+    view.add_item("Scientific", Granularity::Scientific);
+    view.set_selection(selected_granularity as usize);
 
     view.on_select(move |s, granularity| {
         select_granularity(s, granularity.clone());
@@ -36,7 +37,10 @@ fn select_granularity(s: &mut Cursive, granularity: Granularity) {
         for item in t.borrow_items_mut() {
             normalize_for_granularity(item, granularity.clone());
         };
-        db::save_to_db(t.borrow_items_mut());
+        db::save_to_db(ClockKing {
+            clock_entries: t.borrow_items().to_vec(),
+            granularity: granularity,
+        });
     }).expect("The Clock entries table should be defined");
     update_stats(s);
 }
@@ -54,31 +58,31 @@ fn normalize_for_granularity(item: &mut ClockEntry, granularity: Granularity) {
 
 fn normalize(it: NaiveTime, granularity: Granularity) -> NaiveTime {
     match granularity {
-        Granularity::Hour => {
+        Granularity::Relaxed => {
             it.with_minute(0).unwrap()
                 .with_second(0).unwrap()
                 .with_nanosecond(0).unwrap()
         },
-        Granularity::Half => {
+        Granularity::Reasonable => {
             it.with_minute((it.minute() / 30) * 30).unwrap()
                 .with_second(0).unwrap()
                 .with_nanosecond(0).unwrap()
         },
-        Granularity::Quarter => {
+        Granularity::Detailed => {
             it.with_minute((it.minute() / 15) * 15).unwrap()
                 .with_second(0).unwrap()
                 .with_nanosecond(0).unwrap()
         },
-        Granularity::FiveMinute => {
+        Granularity::Paranoid => {
             it.with_minute((it.minute() / 5) * 5).unwrap()
                 .with_second(0).unwrap()
                 .with_nanosecond(0).unwrap()
         },
-        Granularity::Minute => {
+        Granularity::OCD => {
             it.with_second(0).unwrap()
                 .with_nanosecond(0).unwrap()
         },
-        Granularity::Second => {
+        Granularity::Scientific => {
             it.with_nanosecond(0).unwrap()
         },
     }

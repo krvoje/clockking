@@ -5,7 +5,7 @@ use cursive::Cursive;
 use cursive::traits::*;
 use cursive::views::{NamedView, ResizedView, SelectView};
 
-use crate::ClockEntryColumn;
+use crate::{ClockEntryColumn, granularity};
 use crate::format;
 use crate::granularity::Granularity;
 
@@ -30,9 +30,18 @@ pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granula
 }
 
 pub fn get_time(s: &mut Cursive, col: ClockEntryColumn) -> NaiveTime {
+    let granularity = granularity::get_granularity(s);
     s.call_on_name(col.as_str(), |e: &mut ResizedView<SelectView>| {
-        NaiveTime::parse_from_str(e.get_inner().selection().expect("Nothing selected in time field").as_str(), "%H:%M").expect("Unable to parse time from selection")
+        parse_time(granularity, e.get_inner().selection().expect("Nothing selected in time field").as_str())
     }).expect(&format!("{} should be defined", col.as_str()))
+}
+
+pub fn parse_time(granularity: Granularity, value: &str) -> NaiveTime {
+    if granularity == Granularity::Scientific {
+        NaiveTime::parse_from_str(value, "%H:%M:%S").expect("Unable to parse time from selection")
+    } else {
+        NaiveTime::parse_from_str(value, "%H:%M").expect("Unable to parse time from selection")
+    }
 }
 
 fn now(granularity: Granularity) -> String {
@@ -42,15 +51,15 @@ fn now(granularity: Granularity) -> String {
 
 fn daily_clock_entries(granularity: Granularity) -> Vec<String> {
     let minute_step = match granularity {
-        Granularity::Hour => 60,
-        Granularity::Half => 30,
-        Granularity::Quarter => 15,
-        Granularity::FiveMinute => 5,
-        Granularity::Minute => 1,
-        Granularity::Second => 1,
+        Granularity::Relaxed => 60,
+        Granularity::Reasonable => 30,
+        Granularity::Detailed => 15,
+        Granularity::Paranoid => 5,
+        Granularity::OCD => 1,
+        Granularity::Scientific => 1,
     };
     let second_step = match granularity {
-        Granularity::Second => 1,
+        Granularity::Scientific => 1,
         _ => 60,
     };
     (0..24).flat_map(|hour| {
