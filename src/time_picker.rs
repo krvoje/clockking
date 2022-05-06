@@ -6,14 +6,16 @@ use cursive::traits::*;
 use cursive::views::{NamedView, ResizedView, SelectView};
 
 use crate::ClockEntryColumn;
+use crate::format;
+use crate::granularity::Granularity;
 
-pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>) -> NamedView<ResizedView<SelectView>> {
+pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granularity) -> NamedView<ResizedView<SelectView>> {
     let content = if value.is_some() {
-        value.map(|it| it.format("%H:%M").to_string()).expect("Time input entry should be some value")
+        value.map(|it| format::format_naive_time(granularity, it)).expect("Time input entry should be some value")
     } else {
-        now()
+        now(granularity)
     };
-    let entries = daily_clock_entries();
+    let entries = daily_clock_entries(granularity);
 
     let mut view = SelectView::new()
         .h_align(HAlign::Center)
@@ -33,25 +35,29 @@ pub fn get_time(s: &mut Cursive, col: ClockEntryColumn) -> NaiveTime {
     }).expect(&format!("{} should be defined", col.as_str()))
 }
 
-fn granularity() -> u32 {
-    15
-}
-
-fn now() -> String {
+fn now(granularity: Granularity) -> String {
     let now = Local::now();
-    let hour = now.hour();
-    let minute = now.minute();
-    format!(
-        "{:02$}:{:02$}",
-        hour,
-        (minute / granularity()) * granularity(),
-        2)
+    format::format_clock(granularity, now.hour(), now.minute(), now.second())
 }
 
-fn daily_clock_entries() -> Vec<String> {
+fn daily_clock_entries(granularity: Granularity) -> Vec<String> {
+    let minute_step = match granularity {
+        Granularity::Hour => 60,
+        Granularity::Half => 30,
+        Granularity::Quarter => 15,
+        Granularity::FiveMinute => 5,
+        Granularity::Minute => 1,
+        Granularity::Second => 1,
+    };
+    let second_step = match granularity {
+        Granularity::Second => 1,
+        _ => 60,
+    };
     (0..24).flat_map(|hour| {
-        (0..60).step_by(usize::try_from(granularity()).unwrap()).map(|minute| {
-            format!("{:02$}:{:02$}", hour, minute, 2)
+        (0..60).step_by(minute_step).flat_map(|minute| {
+            (0..60).step_by(second_step).map(move |second| {
+                format::format_clock(granularity, hour, minute, second)
+            }).collect::<Vec<String>>()
         }).collect::<Vec<String>>()
     }).collect()
 }
