@@ -1,5 +1,7 @@
 # Clock King
 
+[![run-tests](https://github.com/krvoje/clockking/actions/workflows/main.yaml/badge.svg?branch=master)](https://github.com/krvoje/clockking/actions/workflows/main.yaml)
+
 A console app for jotting down hours tracking for the day. 
 Written to learn Rust with [Cursive](https://github.com/gyscos/cursive).
 
