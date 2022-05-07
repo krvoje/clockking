@@ -8,10 +8,11 @@ use chrono::Duration;
 use cursive::{Cursive, CursiveExt};
 use cursive::align::HAlign;
 use cursive::direction::Orientation;
-use cursive::event::Key;
+use cursive::event::{Event, Key};
 use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, NamedView, OnEventView, TextView};
 use cursive_table_view::{TableView, TableViewItem};
+
 use granularity::Granularity;
 
 use crate::model::*;
@@ -107,11 +108,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                         table
                             .with_name(CLOCK_ENTRIES_TABLE)
                             .min_size((100,20))
-                    ).on_event(Key::Del, |s| delete_current_entry(s))
-                        .on_event('d', |s| delete_current_entry(s))
-                        .on_event('u', |s| undo_delete(s))
-                        .on_event(' ',|s| mark_current_entry_as_clocked(s))
-                        .on_event('a', |s| add_new_entry(s))
+                    ).on_event(Key::Del, delete_current_entry)
+                        .on_event('d', delete_current_entry)
+                        .on_event('u', undo_delete)
+                        .on_event(' ', mark_current_entry_as_clocked)
+                        .on_event('a', add_new_entry)
                 )
                 .child(
                     LinearLayout::new(Vertical)
@@ -130,25 +131,21 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .child(
                     LinearLayout::new(Orientation::Horizontal)
-                        .child(Button::new("(A)dd", |s| add_new_entry(s)))
+                        .child(Button::new("(A)dd", add_new_entry))
                         .child(DummyView.fixed_width(25))
-                        .child(Button::new("(D)elete", |s| delete_current_entry(s)))
+                        .child(Button::new("(D)elete", delete_current_entry))
                         .child(DummyView.fixed_width(25))
-                        .child(Button::new("(U)ndo Delete", |s| undo_delete(s)))
+                        .child(Button::new("(U)ndo Delete", undo_delete))
                         .child(DummyView.fixed_width(25))
-                        .child(Button::new("(Q)uit", |s| s.quit()))
+                        .child(Button::new("(Q)uit", quit))
                 )
         ).title("Clock King 👑")
     );
 
-    siv.add_global_callback('q', Cursive::quit);
+    siv.add_global_callback('q', quit);
+    siv.add_global_callback(Event::CtrlChar('c'), quit);
 
-    siv.add_global_callback(Key::Esc,|s| {
-        s.pop_layer();
-        if s.screen().is_empty() {
-            s.quit()
-        }
-    });
+    siv.add_global_callback(Key::Esc,strip_layer);
 
     update_stats(&mut siv);
 
@@ -184,15 +181,9 @@ fn delete_current_entry(s: &mut Cursive) {
             "Delete entry",
             "Are you sure?",
             |s| {
-                let granularity = granularity::get_granularity(s);
                 s.pop_layer();
                 let deleted = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-                    let item = t.item().map(|index| t.remove_item(index)).flatten();
-                    db::save_to_db(ClockKing {
-                        clock_entries: t.borrow_items().to_vec(),
-                        granularity,
-                    });
-                    item
+                    t.item().map(|index| t.remove_item(index)).flatten()
                 }).unwrap();
                 s.user_data::<GlobalContext>().map(|it| it.delete(deleted));
                 update_stats(s)
@@ -205,13 +196,8 @@ fn undo_delete(s: &mut Cursive) {
         it.undo()
     }).flatten()
         .map(|deleted| {
-            let granularity = granularity::get_granularity(s);
             s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
                 t.insert_item(deleted);
-                db::save_to_db(ClockKing {
-                    clock_entries: t.borrow_items().to_vec(),
-                    granularity,
-                });
             });
         });
     update_stats(s);
@@ -236,16 +222,10 @@ fn update_stats(s: &mut Cursive) {
 }
 
 fn mark_current_entry_as_clocked(s: &mut Cursive) {
-    let granularity = granularity::get_granularity(s);
     s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         t.item().map(|index| {
             let mut item = t.borrow_item_mut(index).expect("No entry at current index");
             item.is_clocked = !item.is_clocked;
-        });
-        let items = t.borrow_items();
-        db::save_to_db(ClockKing {
-            clock_entries: items.to_vec(),
-            granularity,
         });
     }).unwrap();
     update_stats(s);
@@ -294,17 +274,29 @@ fn entry_form(prompt: &str, entry: Option<&ClockEntry>, index: Option<usize>, gr
                 description: input::get_text(s, ClockEntryColumn::Description.as_str()),
                 is_clocked: input::get_bool(s, ClockEntryColumn::IsClocked.as_str()) ,
             };
-            let granularity = granularity::get_granularity(s);
             s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
                 index.map(|i| table.remove_item(i));
                 table.insert_item(new_entry);
-                let items = table.borrow_items();
-                db::save_to_db( ClockKing {
-                    clock_entries: items.to_vec(),
-                    granularity,
-                });
             }).expect("Unable to get clock entries table");
             update_stats(s);
             s.pop_layer();
         }).with_name(CLOCK_ENTRY_FORM)
+}
+
+fn strip_layer(s: &mut Cursive) {
+    s.pop_layer();
+    if s.screen().is_empty() {
+        quit(s);
+    }
+}
+
+pub fn get_clock_entries(s: &mut Cursive) -> Vec<ClockEntry> {
+    s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
+        table.borrow_items().to_vec()
+    }).expect("Clock entries table not defined")
+}
+
+fn quit(s: &mut Cursive) {
+    db::save_to_db(s);
+    s.quit();
 }

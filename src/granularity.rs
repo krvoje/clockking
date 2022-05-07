@@ -3,7 +3,7 @@ use cursive::{Cursive, traits::Nameable, views::{NamedView, SelectView}};
 use cursive_table_view::TableView;
 use serde::{Deserialize, Serialize};
 
-use crate::{CLOCK_ENTRIES_TABLE, ClockEntryColumn, ClockKing, db, model::ClockEntry, update_stats};
+use crate::{CLOCK_ENTRIES_TABLE, ClockEntryColumn, model::ClockEntry, update_stats};
 
 const GRANULARITY: &str = "Granularity";
 
@@ -37,10 +37,6 @@ fn select_granularity(s: &mut Cursive, granularity: Granularity) {
         for item in t.borrow_items_mut() {
             normalize_for_granularity(item, granularity.clone());
         };
-        db::save_to_db(ClockKing {
-            clock_entries: t.borrow_items().to_vec(),
-            granularity: granularity,
-        });
     }).expect("The Clock entries table should be defined");
     update_stats(s);
 }
