@@ -12,6 +12,7 @@ use cursive::event::{Event, Key};
 use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, NamedView, OnEventView, TextView};
 use cursive_table_view::{TableView, TableViewItem};
+use scheduled_thread_pool::ScheduledThreadPool;
 
 use granularity::Granularity;
 
@@ -77,9 +78,8 @@ impl TableViewItem<ClockEntryColumn> for ClockEntry {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut siv = Cursive::default();
-    siv.set_user_data(GlobalContext::new());
 
-    let initial_clock_king = db::read_db();
+    let initial_clock_king = db::init_from_db(&mut siv);
 
     let mut table: TableView<ClockEntry, ClockEntryColumn> = TableView::<ClockEntry, ClockEntryColumn>::new()
         .column(ClockEntryColumn::From, ClockEntryColumn::From.as_str(), |c| {c.width_percent(10).align(HAlign::Center) })
@@ -150,6 +150,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     update_stats(&mut siv);
 
     siv.focus_name(CLOCK_ENTRIES_TABLE)?;
+
+    let cb_sink = siv.cb_sink().clone();
+    let thread_pool = ScheduledThreadPool::new(1);
+    thread_pool.execute_at_fixed_rate(
+        core::time::Duration::from_secs(30),
+        core::time::Duration::from_secs(30),
+        move || { cb_sink.send(Box::new(db::save_to_db)).unwrap() }
+    );
 
     Ok(siv.run())
 }

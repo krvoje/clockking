@@ -8,15 +8,10 @@ const UNDO_BUFFER_SIZE: usize = 20;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GlobalContext {
     pub deleted: VecDeque<ClockEntry>,
+    pub last_saved: ClockKing,
 }
 
 impl GlobalContext {
-    pub fn new() -> GlobalContext {
-        GlobalContext {
-            deleted: VecDeque::new(),
-        }
-    }
-
     pub fn delete(&mut self, clock_entry: Option<ClockEntry>) {
         clock_entry.map(|it| {
             if self.deleted.len() >= UNDO_BUFFER_SIZE {
@@ -31,13 +26,13 @@ impl GlobalContext {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ClockKing {
     pub clock_entries: Vec<ClockEntry>,
     pub granularity: Granularity,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ClockEntry {
     pub from: NaiveTime,
     pub to: NaiveTime,
