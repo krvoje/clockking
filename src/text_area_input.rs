@@ -2,7 +2,7 @@ use cursive::Cursive;
 use cursive::traits::*;
 use cursive::views::{NamedView, TextArea};
 
-use crate::ClockEntryColumn;
+use crate::clock_entries_table::ClockEntryColumn;
 
 pub fn new(col: ClockEntryColumn, value:Option<String>) -> NamedView<TextArea> {
     TextArea::new()

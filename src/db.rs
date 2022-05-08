@@ -3,7 +3,7 @@ use std::io::{BufReader, BufWriter};
 
 use cursive::Cursive;
 
-use crate::{ClockEntry, ClockKing, GlobalContext, Granularity, granularity};
+use crate::{clock_entries_table, ClockEntry, ClockKing, GlobalContext, Granularity, granularity_picker};
 
 const DB_LOCATION: &str = "./.clockking/db.json";
 
@@ -21,8 +21,8 @@ pub fn init_from_db(s: &mut Cursive) -> ClockKing {
 }
 
 pub fn save_to_db(s: &mut Cursive) {
-    let clock_entries = crate::get_clock_entries(s);
-    let granularity = granularity::get_granularity(s);
+    let clock_entries = clock_entries_table::get_clock_entries(s);
+    let granularity = granularity_picker::get_granularity(s);
     let new_model = ClockKing {
         clock_entries,
         granularity,

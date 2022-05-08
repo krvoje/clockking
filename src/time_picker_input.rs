@@ -4,10 +4,10 @@ use cursive::align::HAlign;
 use cursive::Cursive;
 use cursive::traits::*;
 use cursive::views::{NamedView, ResizedView, SelectView};
+use crate::clock_entries_table::ClockEntryColumn;
 
-use crate::{ClockEntryColumn, granularity};
-use crate::format;
-use crate::granularity::Granularity;
+use crate::{format, granularity_picker};
+use crate::granularity_picker::Granularity;
 
 pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granularity) -> NamedView<ResizedView<SelectView>> {
     let content = if value.is_some() {
@@ -30,7 +30,7 @@ pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granula
 }
 
 pub fn get_time(s: &mut Cursive, col: ClockEntryColumn) -> NaiveTime {
-    let granularity = granularity::get_granularity(s);
+    let granularity = granularity_picker::get_granularity(s);
     s.call_on_name(col.as_str(), |e: &mut ResizedView<SelectView>| {
         parse_time(granularity, e.get_inner().selection().expect("Nothing selected in time field").as_str())
     }).expect(&format!("{} should be defined", col.as_str()))

@@ -1,9 +1,13 @@
 use chrono::{NaiveTime, Timelike};
-use cursive::{Cursive, traits::Nameable, views::{NamedView, SelectView}};
+use cursive::{Cursive, traits::Nameable, views::SelectView};
+use cursive::direction::Orientation;
+use cursive::traits::Resizable;
+use cursive::views::{LinearLayout, NamedView, TextView};
 use cursive_table_view::TableView;
 use serde::{Deserialize, Serialize};
 
-use crate::{CLOCK_ENTRIES_TABLE, ClockEntryColumn, model::ClockEntry, update_stats};
+use crate::{clock_entries_table, model::ClockEntry, stats_view};
+use crate::clock_entries_table::ClockEntryColumn;
 
 const GRANULARITY: &str = "Granularity";
 
@@ -17,7 +21,13 @@ pub enum Granularity {
     Scientific,
 }
 
-pub fn new(selected_granularity: Granularity) -> NamedView<SelectView<Granularity>> {
+pub fn new(selected_granularity: Granularity) -> LinearLayout {
+    LinearLayout::new(Orientation::Horizontal)
+        .child(TextView::new("Time granularity:").min_width(20))
+        .child(create_view(selected_granularity))
+}
+
+fn create_view(selected_granularity: Granularity) -> NamedView<SelectView<Granularity>> {
     let mut view = SelectView::new().popup();
     view.add_item("Relaxed", Granularity::Relaxed);
     view.add_item("Reasonable", Granularity::Reasonable);
@@ -33,12 +43,12 @@ pub fn new(selected_granularity: Granularity) -> NamedView<SelectView<Granularit
 }
 
 fn select_granularity(s: &mut Cursive, granularity: Granularity) {
-    s.call_on_name(CLOCK_ENTRIES_TABLE, |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
+    s.call_on_name(clock_entries_table::CLOCK_ENTRIES_TABLE, |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         for item in t.borrow_items_mut() {
             normalize_for_granularity(item, granularity.clone());
         };
     }).expect("The Clock entries table should be defined");
-    update_stats(s);
+    stats_view::update_stats(s);
 }
 
 pub fn get_granularity(s: &mut Cursive) -> Granularity {
@@ -87,8 +97,9 @@ fn normalize(it: NaiveTime, granularity: Granularity) -> NaiveTime {
 #[cfg(test)]
 mod test {
     use chrono::NaiveTime;
+
     use crate::Granularity;
-    use crate::granularity::normalize;
+    use crate::granularity_picker::normalize;
 
     #[test]
     fn test_normalize() {

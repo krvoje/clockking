@@ -1,6 +1,6 @@
 use chrono::{NaiveTime, Timelike};
 
-use crate::granularity::Granularity;
+use crate::granularity_picker::Granularity;
 
 pub fn format_hms_with_prompt(granularity: Granularity, prompt: &str, total_seconds: i64) -> String {
     format!("{}:\t{}", prompt, format_hms(granularity, total_seconds))
