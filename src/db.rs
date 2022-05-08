@@ -3,7 +3,7 @@ use std::io::{BufReader, BufWriter};
 
 use cursive::Cursive;
 
-use crate::{clock_entries_table, ClockEntry, ClockKing, GlobalContext, Granularity, granularity_picker};
+use crate::{app_context, clock_entries_table, ClockEntry, ClockKing, GlobalContext, Granularity, granularity_picker};
 
 const DB_LOCATION: &str = "./.clockking/db.json";
 
@@ -27,14 +27,13 @@ pub fn save_to_db(s: &mut Cursive) {
         clock_entries,
         granularity,
     };
-    let context = s.user_data::<GlobalContext>().expect("Global context should be defined");
-    if context.model_changed(&new_model) {
+    if app_context::fetch(s).model_changed(&new_model) {
         save_model_to_db(s, &new_model);
     }
 }
 
 fn save_model_to_db(s: &mut Cursive, clock_king: &ClockKing) {
-    s.user_data::<GlobalContext>().map(|it| it.save(clock_king.clone()));
+    app_context::fetch(s).save(clock_king.clone());
     let file = File::create(DB_LOCATION).expect("Unable to open DB file");
     let writer = BufWriter::new(file);
     serde_json::to_writer_pretty(writer, &clock_king).expect("Saving to DB failed");

@@ -10,6 +10,7 @@ use granularity_picker::Granularity;
 use crate::clock_entries_table::CLOCK_ENTRIES_TABLE;
 use crate::model::*;
 
+mod app_context;
 mod db;
 mod model;
 mod format;

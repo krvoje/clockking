@@ -9,6 +9,7 @@ const UNDO_BUFFER_SIZE: usize = 20;
 pub struct GlobalContext {
     deleted: VecDeque<ClockEntry>,
     last_saved: ClockKing,
+    pub recording: Option<ClockEntry>,
 }
 
 impl GlobalContext {
@@ -16,6 +17,7 @@ impl GlobalContext {
         GlobalContext {
             deleted: VecDeque::<ClockEntry>::default(),
             last_saved: model.clone(),
+            recording: None,
         }
     }
 

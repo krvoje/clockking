@@ -8,7 +8,7 @@ use cursive::traits::{Nameable, Resizable};
 use cursive::views::{NamedView, ResizedView};
 use cursive_table_view::{TableView, TableViewItem};
 
-use crate::{clock_entry_form, ClockEntry, ClockKing, format, GlobalContext, Granularity, granularity_picker, stats_view};
+use crate::{clock_entry_form, ClockEntry, ClockKing, app_context, format, Granularity, granularity_picker, stats_view};
 
 pub const CLOCK_ENTRIES_TABLE: &str   = "clock_entries";
 
@@ -111,16 +111,15 @@ pub fn delete_current_entry(s: &mut Cursive) {
                 let deleted = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
                     t.item().map(|index| t.remove_item(index)).flatten()
                 }).unwrap();
-                s.user_data::<GlobalContext>().map(|it| it.delete(deleted));
+                app_context::fetch(s).delete(deleted);
                 stats_view::update_stats(s)
             }
         ));
 }
 
 pub fn undo_delete(s: &mut Cursive) {
-    s.user_data::<GlobalContext>().map(|it| {
-        it.undo()
-    }).flatten()
+    app_context::fetch(s)
+        .undo()
         .map(|deleted| {
             s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
                 t.insert_item(deleted);
