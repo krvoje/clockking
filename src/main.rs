@@ -22,8 +22,9 @@ use crate::Orientation::Vertical;
 mod db;
 mod model;
 mod format;
-mod input;
-mod time_picker;
+mod text_area_input;
+mod time_picker_input;
+mod checkbox_input;
 mod granularity;
 
 const CLOCK_ENTRIES_TABLE: &str   = "clock_entries";
@@ -260,27 +261,27 @@ fn entry_form(prompt: &str, entry: Option<&ClockEntry>, index: Option<usize>, gr
             ListView::new()
                 .child(
                     ClockEntryColumn::From.as_str(),
-                    time_picker::new(ClockEntryColumn::From, entry.map(|it| it.from), granularity)
+                    time_picker_input::new(ClockEntryColumn::From, entry.map(|it| it.from), granularity)
                 )
                 .child(
                     ClockEntryColumn::To.as_str(),
-                    time_picker::new(ClockEntryColumn::To, entry.map(|it|it.to), granularity)
+                    time_picker_input::new(ClockEntryColumn::To, entry.map(|it|it.to), granularity)
                 )
                 .child(
                     ClockEntryColumn::Description.as_str(),
-                    input::text_area_input(ClockEntryColumn::Description, entry.map(|it| it.description.clone()))
+                    text_area_input::new(ClockEntryColumn::Description, entry.map(|it| it.description.clone()))
                 )
                 .child(
                     ClockEntryColumn::IsClocked.as_str(),
-                    input::checkbox_input(ClockEntryColumn::IsClocked, entry.map(|it| it.is_clocked))
+                    checkbox_input::new(ClockEntryColumn::IsClocked, entry.map(|it| it.is_clocked))
                 )
         )
         .button("Ok", move |s| {
             let new_entry = ClockEntry {
-                from: time_picker::get_time(s, ClockEntryColumn::From),
-                to: time_picker::get_time(s, ClockEntryColumn::To),
-                description: input::get_text(s, ClockEntryColumn::Description.as_str()),
-                is_clocked: input::get_bool(s, ClockEntryColumn::IsClocked.as_str()) ,
+                from: time_picker_input::get_time(s, ClockEntryColumn::From),
+                to: time_picker_input::get_time(s, ClockEntryColumn::To),
+                description: text_area_input::get_value(s, ClockEntryColumn::Description.as_str()),
+                is_clocked: checkbox_input::get_value(s, ClockEntryColumn::IsClocked.as_str()) ,
             };
             s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
                 index.map(|i| table.remove_item(i));

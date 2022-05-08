@@ -85,7 +85,7 @@ mod parse_time_test {
     use chrono::NaiveTime;
 
     use crate::Granularity;
-    use crate::time_picker::parse_time;
+    use crate::time_picker_input::parse_time;
 
     #[test]
     fn parse_time_relaxed() {
@@ -146,12 +146,26 @@ mod parse_time_test {
             })
         });
     }
+
+    #[test]
+    fn parse_time_scientific() {
+        (0..24).for_each(|hour| {
+            (0..60).for_each(move |minute| {
+                (0..60).for_each(move |second| {
+                    assert_eq!(
+                        parse_time(Granularity::Scientific, format!("{:03$}:{:03$}:{:03$}", hour, minute, second, 2).as_str()),
+                        NaiveTime::from_hms(hour, minute, second)
+                    )
+                })
+            })
+        });
+    }
 }
 
 #[cfg(test)]
 mod daily_clock_entries_test {
     use crate::Granularity;
-    use crate::time_picker::daily_clock_entries;
+    use crate::time_picker_input::daily_clock_entries;
 
     #[test]
     fn daily_clock_entries_relaxed() {

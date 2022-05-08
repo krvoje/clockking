@@ -133,87 +133,36 @@ mod format_clock_test {
     use crate::Granularity;
 
     #[test]
-    fn format_clock_relaxed() {
+    fn format_clock_test() {
         (0..24).for_each(|hour| {
             (0..60).for_each(|minute| {
                 (0..60).for_each(|second| {
                     assert_eq!(
                         format_clock(Granularity::Relaxed, hour, minute, second),
                         format!("{:01$}:00", hour, 2)
-                    )
-                })
-            })
-        });
-    }
-
-    #[test]
-    fn format_clock_reasonable() {
-        (0..24).for_each(|hour| {
-            (0..60).for_each(|minute| {
-                (0..60).for_each(|second| {
+                    );
                     assert_eq!(
                         format_clock(Granularity::Reasonable, hour, minute, second),
                         format!("{:02$}:{:02$}", hour, minute / 30 * 30, 2)
-                    )
-                })
-            })
-        });
-    }
-
-    #[test]
-    fn format_clock_detailed() {
-        (0..24).for_each(|hour| {
-            (0..60).for_each(|minute| {
-                (0..60).for_each(|second| {
+                    );
                     assert_eq!(
                         format_clock(Granularity::Detailed, hour, minute, second),
                         format!("{:02$}:{:02$}", hour, minute / 15 * 15, 2)
-                    )
-                })
-            })
-        });
-    }
-
-    #[test]
-    fn format_clock_paranoid() {
-        (0..24).for_each(|hour| {
-            (0..60).for_each(|minute| {
-                (0..60).for_each(|second| {
+                    );
                     assert_eq!(
                         format_clock(Granularity::Paranoid, hour, minute, second),
                         format!("{:02$}:{:02$}", hour, minute / 5 * 5, 2)
-                    )
-                })
-            })
-        });
-    }
-
-    #[test]
-    fn format_clock_ocd() {
-        (0..24).for_each(|hour| {
-            (0..60).for_each(|minute| {
-                (0..60).for_each(|second| {
+                    );
                     assert_eq!(
                         format_clock(Granularity::OCD, hour, minute, second),
                         format!("{:02$}:{:02$}", hour, minute, 2)
-                    )
-                })
-            })
-        });
-    }
-
-    #[test]
-    fn format_clock_scientific() {
-        (0..24).for_each(|hour| {
-            (0..60).for_each(|minute| {
-                (0..60).for_each(|second| {
+                    );
                     assert_eq!(
                         format_clock(Granularity::Scientific, hour, minute, second),
                         format!("{:03$}:{:03$}:{:03$}", hour, minute, second, 2)
-                    )
+                    );
                 })
             })
         });
     }
-
 }

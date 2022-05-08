@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::fs::{create_dir_all, File};
 use std::io::{BufReader, BufWriter};
 
@@ -16,10 +15,7 @@ pub fn init_from_db(s: &mut Cursive) -> ClockKing {
         clock_entries: Vec::<ClockEntry>::default(),
         granularity: Granularity::Detailed,
     });
-    s.set_user_data(GlobalContext {
-        deleted: VecDeque::<ClockEntry>::default(),
-        last_saved: u.clone(),
-    });
+    s.set_user_data(GlobalContext::new(&u));
 
     u
 }
@@ -31,14 +27,14 @@ pub fn save_to_db(s: &mut Cursive) {
         clock_entries,
         granularity,
     };
-    let last_saved = s.user_data::<GlobalContext>().map(|it| it.last_saved.clone()).expect("Global context should be defined");
-    if last_saved != new_model {
+    let context = s.user_data::<GlobalContext>().expect("Global context should be defined");
+    if context.model_changed(&new_model) {
         save_model_to_db(s, &new_model);
     }
 }
 
 fn save_model_to_db(s: &mut Cursive, clock_king: &ClockKing) {
-    s.user_data::<GlobalContext>().map(|it| it.last_saved = clock_king.clone());
+    s.user_data::<GlobalContext>().map(|it| it.save(clock_king.clone()));
     let file = File::create(DB_LOCATION).expect("Unable to open DB file");
     let writer = BufWriter::new(file);
     serde_json::to_writer_pretty(writer, &clock_king).expect("Saving to DB failed");

@@ -83,3 +83,44 @@ fn normalize(it: NaiveTime, granularity: Granularity) -> NaiveTime {
         },
     }
 }
+
+#[cfg(test)]
+mod test {
+    use chrono::NaiveTime;
+    use crate::Granularity;
+    use crate::granularity::normalize;
+
+    #[test]
+    fn test_normalize() {
+        (0..24).for_each(|hour| {
+            (0..60).for_each(|minute| {
+                (0..60).for_each(|second| {
+                    assert_eq!(
+                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::Relaxed),
+                        NaiveTime::from_hms(hour, 0, 0)
+                    );
+                    assert_eq!(
+                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::Reasonable),
+                        NaiveTime::from_hms(hour, minute / 30 * 30, 0)
+                    );
+                    assert_eq!(
+                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::Detailed),
+                        NaiveTime::from_hms(hour, minute / 15 * 15, 0)
+                    );
+                    assert_eq!(
+                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::Paranoid),
+                        NaiveTime::from_hms(hour, minute / 5 * 5, 0)
+                    );
+                    assert_eq!(
+                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::OCD),
+                        NaiveTime::from_hms(hour, minute, 0)
+                    );
+                    assert_eq!(
+                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::Scientific),
+                        NaiveTime::from_hms(hour, minute, second)
+                    );
+                })
+            })
+        });
+    }
+}
