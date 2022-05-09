@@ -9,7 +9,7 @@ use crate::clock_entries_table::ClockEntryColumn;
 use crate::{format, granularity_picker};
 use crate::granularity_picker::Granularity;
 
-pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granularity) -> NamedView<ResizedView<SelectView>> {
+pub fn time_picker(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granularity) -> NamedView<ResizedView<SelectView>> {
     let content = if value.is_some() {
         value.map(|it| format::format_naive_time(granularity, it)).expect("Time input entry should be some value")
     } else {
@@ -29,7 +29,7 @@ pub fn new(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granula
         .with_name(col.as_str())
 }
 
-pub fn get_time(s: &mut Cursive, col: ClockEntryColumn) -> NaiveTime {
+pub fn time_picker_value(s: &mut Cursive, col: ClockEntryColumn) -> NaiveTime {
     let granularity = granularity_picker::get_granularity(s);
     s.call_on_name(col.as_str(), |e: &mut ResizedView<SelectView>| {
         parse_time(granularity, e.get_inner().selection().expect("Nothing selected in time field").as_str())
