@@ -17,7 +17,9 @@ Meant as manual task list, where the results can be transferred to a time tracki
 
 Keyboard shortcuts are listed on the screen, spacebar toggles whether an item is clocked or not. 
 
-There is a time-granularity toggle for how detailed you want to be with your tracking.
+There is a time-granularity toggle for how detailed you want to be with your tracking (1h, 30m, 15m, ...)
+
+When recording a task, the end timestamp is rounded to the current granularity.
 
 The executable creates a `./.clockking/db.json` where the current list is stored. There's an autosave loop, and the data
 gets saved when you quit the program normally.
