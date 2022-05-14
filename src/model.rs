@@ -7,8 +7,8 @@ const UNDO_BUFFER_SIZE: usize = 20;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GlobalContext {
-    deleted: VecDeque<ClockEntry>,
-    last_saved: ClockKing,
+    pub deleted: VecDeque<ClockEntry>,
+    pub last_saved: ClockKing,
     pub recording: Option<ClockEntry>,
 }
 

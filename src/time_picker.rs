@@ -9,7 +9,7 @@ use crate::clock_entries_table::ClockEntryColumn;
 use crate::{format, granularity_picker};
 use crate::granularity_picker::Granularity;
 
-pub fn time_picker(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granularity) -> NamedView<ResizedView<SelectView>> {
+pub fn time_picker_input(col: ClockEntryColumn, value: Option<NaiveTime>, granularity: Granularity) -> NamedView<ResizedView<SelectView>> {
     let content = if value.is_some() {
         value.map(|it| format::format_naive_time(granularity, it)).expect("Time input entry should be some value")
     } else {
@@ -36,7 +36,7 @@ pub fn time_picker_value(s: &mut Cursive, col: ClockEntryColumn) -> NaiveTime {
     }).expect(&format!("{} should be defined", col.as_str()))
 }
 
-fn parse_time(granularity: Granularity, value: &str) -> NaiveTime {
+pub fn parse_time(granularity: Granularity, value: &str) -> NaiveTime {
     let time = if granularity == Granularity::Scientific {
         NaiveTime::parse_from_str(value, "%H:%M:%S").expect("Unable to parse time from selection")
     } else {
@@ -53,9 +53,14 @@ fn parse_time(granularity: Granularity, value: &str) -> NaiveTime {
     }
 }
 
-fn now(granularity: Granularity) -> String {
+pub fn now(granularity: Granularity) -> String {
     let now = Local::now();
     format::format_clock(granularity, now.hour(), now.minute(), now.second())
+}
+
+pub fn now_naive_time(granularity: Granularity) -> NaiveTime {
+    let now_string = now(granularity);
+    parse_time(granularity, now_string.as_str())
 }
 
 fn daily_clock_entries(granularity: Granularity) -> Vec<String> {
@@ -85,7 +90,7 @@ mod parse_time_test {
     use chrono::NaiveTime;
 
     use crate::Granularity;
-    use crate::time_picker_input::parse_time;
+    use crate::time_picker::parse_time;
 
     #[test]
     fn parse_time_relaxed() {
@@ -165,7 +170,7 @@ mod parse_time_test {
 #[cfg(test)]
 mod daily_clock_entries_test {
     use crate::Granularity;
-    use crate::time_picker_input::daily_clock_entries;
+    use crate::time_picker::daily_clock_entries;
 
     #[test]
     fn daily_clock_entries_relaxed() {

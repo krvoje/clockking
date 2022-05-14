@@ -8,7 +8,7 @@ use cursive::traits::{Nameable, Resizable};
 use cursive::views::{NamedView, ResizedView};
 use cursive_table_view::{TableView, TableViewItem};
 
-use crate::{clock_entry_form, ClockEntry, ClockKing, app_context, format, Granularity, granularity_picker, stats_view};
+use crate::{app_context, clock_entry_form, ClockEntry, ClockKing, format, Granularity, granularity_picker, input, stats_view, time_picker};
 
 pub const CLOCK_ENTRIES_TABLE: &str   = "clock_entries";
 
@@ -80,7 +80,11 @@ fn edit_entry(s: &mut Cursive, index: usize) {
     let granularity = granularity_picker::get_granularity(s);
     let form = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         let current_entry = t.borrow_item(index).map(|it| it.clone());
-        clock_entry_form::new("Edit Clock Entry ⏰", current_entry.as_ref(), Some(index), granularity)
+        clock_entry_form::new(
+            "Edit Clock Entry ⏰",
+            current_entry.as_ref(),
+            granularity,
+            move |s: &mut Cursive| submit_clock_entry(s, Some(index)))
     }).unwrap();
     s.add_layer(form);
 }
@@ -97,8 +101,28 @@ pub fn add_new_entry(s: &mut Cursive) {
     let granularity = granularity_picker::get_granularity(s);
 
     s.add_layer(
-        clock_entry_form::new("Add Clock Entry ⏰", template_entry.as_ref(), None, granularity)
+        clock_entry_form::new(
+            "Add Clock Entry ⏰",
+            template_entry.as_ref(),
+            granularity,
+            move |s: &mut Cursive| submit_clock_entry(s, None)
+        )
     );
+}
+
+fn submit_clock_entry(s: &mut Cursive, index: Option<usize>) {
+    let new_entry = ClockEntry {
+        from: time_picker::time_picker_value(s, ClockEntryColumn::From),
+        to: time_picker::time_picker_value(s, ClockEntryColumn::To),
+        description: input::text_area_value(s, ClockEntryColumn::Description),
+        is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
+    };
+    s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
+        index.map(|i| table.remove_item(i));
+        table.insert_item(new_entry);
+    }).expect("Unable to get clock entries table");
+    stats_view::update_stats(s);
+    s.pop_layer();
 }
 
 pub fn delete_current_entry(s: &mut Cursive) {

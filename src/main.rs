@@ -14,13 +14,15 @@ mod app_context;
 mod db;
 mod model;
 mod format;
-mod time_picker_input;
+mod time_picker;
+mod input;
 mod granularity_picker;
 mod clock_entry_form;
 mod autosave;
 mod clock_entries_table;
 mod stats_view;
 mod main_dialog;
+mod record;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut siv = Cursive::default();
