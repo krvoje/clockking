@@ -6,7 +6,7 @@ use crate::clock_entries_table::ClockEntryColumn;
 use crate::main_dialog::RECORD_BUTTON;
 
 pub fn record(s: &mut Cursive) {
-    if app_context::fetch(s).recording.is_some() {
+    if app_context::fetch(s).is_recording() {
         stop_recording(s)
     } else {
         start_recording(s)
@@ -38,16 +38,17 @@ fn submit_recording_entry(s: &mut Cursive) {
         description: input::text_area_value(s, ClockEntryColumn::Description),
         is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
     };
-    app_context::fetch(s).recording = Some(new_entry);
+    app_context::fetch(s).start_recording(new_entry);
     s.pop_layer();
     s.call_on_name(RECORD_BUTTON, |b: &mut Button |{
         b.set_label("Stop (r)ecording")
     });
+    stats_view::update_stats(s);
 }
 
 fn stop_recording(s: &mut Cursive) {
     let granularity = granularity_picker::get_granularity(s);
-    let mut new_entry = app_context::fetch(s).recording.clone().expect("Recording should be in progress");
+    let mut new_entry = app_context::fetch(s).stop_recording();
     new_entry.to = time_picker::now_naive_time(granularity);
     s.add_layer(
         clock_entry_form::new(
@@ -71,8 +72,8 @@ fn add_recording_entry(s: &mut Cursive) {
     }).expect("Unable to get clock entries table");
     stats_view::update_stats(s);
     s.pop_layer();
-    app_context::fetch(s).recording = None;
     s.call_on_name(RECORD_BUTTON, |b: &mut Button |{
         b.set_label("Start (r)ecording")
     });
+    stats_view::update_stats(s);
 }

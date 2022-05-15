@@ -1,15 +1,17 @@
 use std::collections::VecDeque;
+
 use chrono::{Duration, NaiveTime};
 use serde::{Deserialize, Serialize};
+
 use crate::Granularity;
 
 const UNDO_BUFFER_SIZE: usize = 20;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GlobalContext {
-    pub deleted: VecDeque<ClockEntry>,
-    pub last_saved: ClockKing,
-    pub recording: Option<ClockEntry>,
+    deleted: VecDeque<ClockEntry>,
+    last_saved: ClockKing,
+    recording: Option<ClockEntry>,
 }
 
 impl GlobalContext {
@@ -40,6 +42,24 @@ impl GlobalContext {
 
     pub fn model_changed(&mut self, new_model: &ClockKing) -> bool {
         self.last_saved != new_model.clone()
+    }
+
+    pub fn start_recording(&mut self, new_entry: ClockEntry) {
+        self.recording = Some(new_entry);
+    }
+
+    pub fn stop_recording(&mut self) -> ClockEntry {
+        let result = self.recording.clone().expect("Recording should be in progress");
+        self.recording = None;
+        result
+    }
+
+    pub(crate) fn is_recording(&self) -> bool {
+        self.recording.is_some()
+    }
+
+    pub(crate) fn ongoing_recording(&self) -> Option<ClockEntry> {
+        self.recording.clone()
     }
 }
 
