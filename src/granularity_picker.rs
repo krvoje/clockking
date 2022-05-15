@@ -6,7 +6,7 @@ use cursive::views::{LinearLayout, NamedView, TextView};
 use cursive_table_view::TableView;
 use serde::{Deserialize, Serialize};
 
-use crate::{clock_entries_table, model::ClockEntry, stats_view};
+use crate::{app_context, clock_entries_table, model::ClockEntry, stats_view};
 use crate::clock_entries_table::ClockEntryColumn;
 
 const GRANULARITY: &str = "Granularity";
@@ -37,7 +37,7 @@ fn create_view(selected_granularity: Granularity) -> NamedView<SelectView<Granul
     view.add_item("Scientific", Granularity::Scientific);
     view.set_selection(selected_granularity as usize);
 
-    view.on_select(move |s, granularity| {
+    view.on_submit(move |s, granularity| {
         select_granularity(s, granularity.clone());
     }).with_name(GRANULARITY)
 }
@@ -48,6 +48,7 @@ fn select_granularity(s: &mut Cursive, granularity: Granularity) {
             normalize_for_granularity(item, granularity.clone());
         };
     }).expect("The Clock entries table should be defined");
+    app_context::fetch(s).normalize_recording(granularity);
     stats_view::update_stats(s);
 }
 
@@ -57,7 +58,7 @@ pub fn get_granularity(s: &mut Cursive) -> Granularity {
     }).expect("The Granularity select should be defined")
 }
 
-fn normalize_for_granularity(item: &mut ClockEntry, granularity: Granularity) {
+pub fn normalize_for_granularity(item: &mut ClockEntry, granularity: Granularity) {
     item.from = normalize(item.from, granularity);
     item.to = normalize(item.to, granularity);
 }

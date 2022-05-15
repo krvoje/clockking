@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use chrono::{Duration, NaiveTime};
 use serde::{Deserialize, Serialize};
 
-use crate::Granularity;
+use crate::{Granularity, granularity_picker};
 
 const UNDO_BUFFER_SIZE: usize = 20;
 
@@ -23,7 +23,7 @@ impl GlobalContext {
         }
     }
 
-    pub fn delete(&mut self, clock_entry: Option<ClockEntry>) {
+    pub(crate) fn delete(&mut self, clock_entry: Option<ClockEntry>) {
         clock_entry.map(|it| {
             if self.deleted.len() >= UNDO_BUFFER_SIZE {
                 self.deleted.pop_front();
@@ -32,26 +32,34 @@ impl GlobalContext {
         });
     }
 
-    pub fn undo(&mut self) -> Option<ClockEntry> {
+    pub(crate) fn undo(&mut self) -> Option<ClockEntry> {
         self.deleted.pop_back()
     }
 
-    pub fn save(&mut self, clock_king: ClockKing) {
+    pub(crate) fn save(&mut self, clock_king: ClockKing) {
         self.last_saved = clock_king;
     }
 
-    pub fn model_changed(&mut self, new_model: &ClockKing) -> bool {
+    pub(crate) fn model_changed(&mut self, new_model: &ClockKing) -> bool {
         self.last_saved != new_model.clone()
     }
 
-    pub fn start_recording(&mut self, new_entry: ClockEntry) {
+    pub(crate) fn start_recording(&mut self, new_entry: ClockEntry) {
         self.recording = Some(new_entry);
     }
 
-    pub fn stop_recording(&mut self) -> ClockEntry {
+    pub(crate) fn stop_recording(&mut self) -> ClockEntry {
         let result = self.recording.clone().expect("Recording should be in progress");
         self.recording = None;
         result
+    }
+
+    pub(crate) fn normalize_recording(&mut self, granularity: Granularity) {
+        if self.is_recording() {
+            let mut value = self.recording.clone().unwrap();
+            granularity_picker::normalize_for_granularity(&mut value, granularity);
+            self.recording = Some(value);
+        }
     }
 
     pub(crate) fn is_recording(&self) -> bool {
