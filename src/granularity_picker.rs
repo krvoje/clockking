@@ -29,12 +29,12 @@ pub fn new(selected_granularity: Granularity) -> LinearLayout {
 
 fn create_view(selected_granularity: Granularity) -> NamedView<SelectView<Granularity>> {
     let mut view = SelectView::new().popup();
-    view.add_item("Relaxed", Granularity::Relaxed);
-    view.add_item("Reasonable", Granularity::Reasonable);
-    view.add_item("Detailed", Granularity::Detailed);
-    view.add_item("Paranoid", Granularity::Paranoid);
-    view.add_item("OCD", Granularity::OCD);
-    view.add_item("Scientific", Granularity::Scientific);
+    view.add_item("Relaxed (1h)", Granularity::Relaxed);
+    view.add_item("Reasonable (30m)", Granularity::Reasonable);
+    view.add_item("Detailed (15m)", Granularity::Detailed);
+    view.add_item("Paranoid (5m)", Granularity::Paranoid);
+    view.add_item("OCD (1m)", Granularity::OCD);
+    view.add_item("Scientific (1s)", Granularity::Scientific);
     view.set_selection(selected_granularity as usize);
 
     view.on_submit(move |s, granularity| {
