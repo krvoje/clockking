@@ -5,7 +5,13 @@
 A console app for jotting down hours tracking for the day. 
 Written to learn Rust with [Cursive](https://github.com/gyscos/cursive).
 
-Meant as manual task list, where the results can be transferred to a time tracking app at the end of day. 
+Meant as manual task list, where the results can be transferred to a time tracking app at the end of day.
+
+*Disclaimer:* This is a weekend project that I did for fun, and ended up finding useful at work. 
+It's by no means an app with guarantees on anything, but more akin to a script with a TUI I hacked for personal use.
+I've had no issues with losing data, but that doesn't mean it's impossible in some corner cases. So, please bear that 
+in mind when using the app, and approach it lightheartedly as I did, as a tool to have fun with, that's also useful.
+Issues, comments, and suggestions are welcome.
 
 # Functionality
 
