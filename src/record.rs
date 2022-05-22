@@ -18,6 +18,8 @@ fn start_recording(s: &mut Cursive) {
     let new_entry = ClockEntry {
         from: time_picker::now_naive_time(granularity),
         to: time_picker::now_naive_time(granularity),
+        client: String::from(""),
+        project: String::from(""),
         description: String::from(""),
         is_clocked: false,
     };
@@ -35,6 +37,8 @@ fn submit_recording_entry(s: &mut Cursive) {
     let new_entry = ClockEntry {
         from: time_picker::time_picker_value(s, ClockEntryColumn::From),
         to: time_picker::time_picker_value(s, ClockEntryColumn::To),
+        client: input::text_area_value(s, ClockEntryColumn::Client),
+        project: input::text_area_value(s, ClockEntryColumn::Project),
         description: input::text_area_value(s, ClockEntryColumn::Description),
         is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
     };
@@ -64,6 +68,8 @@ fn add_recording_entry(s: &mut Cursive) {
     let new_entry = ClockEntry {
         from: time_picker::time_picker_value(s, ClockEntryColumn::From),
         to: time_picker::time_picker_value(s, ClockEntryColumn::To),
+        client: input::text_area_value(s, ClockEntryColumn::Client),
+        project: input::text_area_value(s, ClockEntryColumn::Project),
         description: input::text_area_value(s, ClockEntryColumn::Description),
         is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
     };

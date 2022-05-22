@@ -81,6 +81,8 @@ pub struct ClockKing {
 pub struct ClockEntry {
     pub from: NaiveTime,
     pub to: NaiveTime,
+    pub client: String,
+    pub project: String,
     pub description: String,
     pub is_clocked: bool,
 }

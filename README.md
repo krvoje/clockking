@@ -21,6 +21,15 @@ This is the main screen, and contains the list of clock entries that can be chec
 
 Keyboard shortcuts are listed on the screen buttons, spacebar toggles whether an item is clocked or not.
 
+A clock entry contains the following info (might not be contained in the screenshots until I update them):
+- `From` - when the task started
+- `To`- when the task ended
+- `Client` - the client for which the task is (can be empty)
+- `Project` - the project for which the task is (can be empty)
+- `Description` - a description of the task
+- `Duration` - the total (calculated) duration of the task
+- `Clocked` - whether the task is clocked in your external time-tracking app
+
 ![Clock entries list](screenshots/task_list.png)
 
 ## Adding a clock entry

@@ -16,6 +16,8 @@ pub const CLOCK_ENTRIES_TABLE: &str   = "clock_entries";
 pub enum ClockEntryColumn {
     From,
     To,
+    Client,
+    Project,
     Description,
     Duration,
     IsClocked,
@@ -26,6 +28,8 @@ impl ClockEntryColumn {
         match *self {
             ClockEntryColumn::From => "From",
             ClockEntryColumn::To => "To",
+            ClockEntryColumn::Client => "Client",
+            ClockEntryColumn::Project => "Project",
             ClockEntryColumn::Description => "Description",
             ClockEntryColumn::Duration => "Duration",
             ClockEntryColumn::IsClocked => "Clocked",
@@ -39,6 +43,8 @@ impl TableViewItem<ClockEntryColumn> for ClockEntry {
         match column {
             ClockEntryColumn::From => format::format_naive_time(granularity, self.from),
             ClockEntryColumn::To => format::format_naive_time(granularity, self.to),
+            ClockEntryColumn::Client => self.client.to_string(),
+            ClockEntryColumn::Project => self.project.to_string(),
             ClockEntryColumn::Description => self.description.to_string(),
             ClockEntryColumn::Duration => format::format_hms(Granularity::OCD, self.duration().num_seconds()),
             ClockEntryColumn::IsClocked => if self.is_clocked { "[x]".to_string() } else { "[ ]".to_string() },
@@ -49,6 +55,8 @@ impl TableViewItem<ClockEntryColumn> for ClockEntry {
         match column {
             ClockEntryColumn::From => self.from.cmp(&other.from),
             ClockEntryColumn::To => self.to.cmp(&other.to),
+            ClockEntryColumn::Client => self.client.cmp(&other.client),
+            ClockEntryColumn::Project => self.project.cmp(&other.project),
             ClockEntryColumn::Description => self.description.cmp(&other.description),
             ClockEntryColumn::Duration => self.duration().cmp(&other.duration()),
             ClockEntryColumn::IsClocked => self.is_clocked.cmp(&other.is_clocked),
@@ -60,6 +68,8 @@ pub fn new(model: ClockKing) -> ResizedView<NamedView<TableView<ClockEntry, Cloc
     let mut table: TableView<ClockEntry, ClockEntryColumn> = TableView::<ClockEntry, ClockEntryColumn>::new()
         .column(ClockEntryColumn::From, ClockEntryColumn::From.as_str(), |c| {c.width_percent(10).align(HAlign::Center) })
         .column(ClockEntryColumn::To, ClockEntryColumn::To.as_str(), |c| {c.width_percent(10).align(HAlign::Center)})
+        .column(ClockEntryColumn::Client, ClockEntryColumn::Client.as_str(), |c| {c.width_percent(10).align(HAlign::Center)})
+        .column(ClockEntryColumn::Project, ClockEntryColumn::Project.as_str(), |c| {c.width_percent(10).align(HAlign::Center)})
         .column(ClockEntryColumn::Description, ClockEntryColumn::Description.as_str(), |c| {c.align(HAlign::Center)})
         .column(ClockEntryColumn::Duration, ClockEntryColumn::Duration.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
         .column(ClockEntryColumn::IsClocked, ClockEntryColumn::IsClocked.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
@@ -94,6 +104,8 @@ pub fn add_new_entry(s: &mut Cursive) {
         t.item().map(|it| t.borrow_item(it).map(|it| ClockEntry {
             from: it.to,
             to: it.to.add(Duration::minutes(60)),
+            client: String::from(""),
+            project: String::from(""),
             description: String::from(""),
             is_clocked: false,
         })).flatten()
@@ -114,6 +126,8 @@ fn submit_clock_entry(s: &mut Cursive, index: Option<usize>) {
     let new_entry = ClockEntry {
         from: time_picker::time_picker_value(s, ClockEntryColumn::From),
         to: time_picker::time_picker_value(s, ClockEntryColumn::To),
+        client: input::text_area_value(s, ClockEntryColumn::Client),
+        project: input::text_area_value(s, ClockEntryColumn::Project),
         description: input::text_area_value(s, ClockEntryColumn::Description),
         is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
     };

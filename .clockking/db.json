@@ -1,34 +1,44 @@
 {
   "clock_entries": [
     {
-      "from": "09:00:00",
-      "to": "11:00:00",
-      "description": "Project Business analysis",
-      "is_clocked": true
-    },
-    {
-      "from": "11:00:00",
-      "to": "11:30:00",
-      "description": "Coffee",
-      "is_clocked": false
-    },
-    {
       "from": "11:30:00",
       "to": "13:00:00",
+      "client": "Client",
+      "project": "Project",
       "description": "Implementing requirements",
       "is_clocked": false
     },
     {
-      "from": "13:00:00",
-      "to": "13:30:00",
-      "description": "Lunch",
+      "from": "13:30:00",
+      "to": "17:00:00",
+      "client": "Client",
+      "project": "Project",
+      "description": "Unit tests implementation",
+      "is_clocked": false
+    },
+    {
+      "from": "11:00:00",
+      "to": "11:30:00",
+      "client": "Client",
+      "project": "Project",
+      "description": "Coffee",
+      "is_clocked": false
+    },
+    {
+      "from": "09:00:00",
+      "to": "11:00:00",
+      "client": "Client",
+      "project": "Project",
+      "description": "Project Business analysis",
       "is_clocked": true
     },
     {
-      "from": "13:30:00",
-      "to": "17:00:00",
-      "description": "Unit tests implementation",
-      "is_clocked": false
+      "from": "13:00:00",
+      "to": "13:30:00",
+      "client": "",
+      "project": "",
+      "description": "Lunch",
+      "is_clocked": true
     }
   ],
   "granularity": "Detailed"

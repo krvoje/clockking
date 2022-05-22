@@ -29,6 +29,14 @@ where
                     time_picker::time_picker_input(ClockEntryColumn::To, entry.map(|it|it.to), granularity)
                 )
                 .child(
+                    ClockEntryColumn::Client.as_str(),
+                    input::text_area_input(ClockEntryColumn::Client, entry.map(|it| it.client.clone()))
+                )
+                .child(
+                    ClockEntryColumn::Project.as_str(),
+                    input::text_area_input(ClockEntryColumn::Project, entry.map(|it| it.project.clone()))
+                )
+                .child(
                     ClockEntryColumn::Description.as_str(),
                     input::text_area_input(ClockEntryColumn::Description, entry.map(|it| it.description.clone()))
                 )
