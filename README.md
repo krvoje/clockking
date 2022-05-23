@@ -13,6 +13,14 @@ I've had no issues with losing data, but that doesn't mean it's impossible in so
 in mind when using the app, and approach it lightheartedly as I did, as a tool to have fun with, that's also useful.
 Issues, comments, and suggestions are welcome.
 
+# Quickstart
+
+To start the program, just run:
+
+`cargo run --release`
+
+If you do not have the Rust toolchain installed, [check the installation instructions](https://www.rust-lang.org/learn/get-started).
+
 # Functionality
 
 ## Clock entries list
