@@ -83,6 +83,7 @@ pub struct ClockEntry {
     pub to: NaiveTime,
     pub description: String,
     pub is_clocked: bool,
+    pub granularity: Granularity,
 }
 
 impl ClockEntry {

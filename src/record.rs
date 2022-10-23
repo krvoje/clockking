@@ -20,6 +20,7 @@ fn start_recording(s: &mut Cursive) {
         to: time_picker::now_naive_time(granularity),
         description: String::from(""),
         is_clocked: false,
+        granularity: granularity
     };
     s.add_layer(
         clock_entry_form::new(
@@ -36,7 +37,8 @@ fn submit_recording_entry(s: &mut Cursive) {
         from: time_picker::time_picker_value(s, ClockEntryColumn::From),
         to: time_picker::time_picker_value(s, ClockEntryColumn::To),
         description: input::text_area_value(s, ClockEntryColumn::Description),
-        is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
+        is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked),
+        granularity: granularity_picker::get_granularity(s),    
     };
     app_context::fetch(s).start_recording(new_entry);
     s.pop_layer();
@@ -66,6 +68,7 @@ fn add_recording_entry(s: &mut Cursive) {
         to: time_picker::time_picker_value(s, ClockEntryColumn::To),
         description: input::text_area_value(s, ClockEntryColumn::Description),
         is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
+        granularity: granularity_picker::get_granularity(s),
     };
     s.call_on_name(CLOCK_ENTRIES_TABLE, |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
         table.insert_item(new_entry);

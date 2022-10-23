@@ -8,7 +8,7 @@ use cursive::traits::{Nameable, Resizable};
 use cursive::views::{NamedView, ResizedView};
 use cursive_table_view::{TableView, TableViewItem};
 
-use crate::{app_context, clock_entry_form, ClockEntry, ClockKing, format, Granularity, granularity_picker, input, stats_view, time_picker};
+use crate::{app_context, clock_entry_form, ClockEntry, ClockKing, format, granularity_picker, input, stats_view, time_picker};
 
 pub const CLOCK_ENTRIES_TABLE: &str   = "clock_entries";
 
@@ -35,12 +35,11 @@ impl ClockEntryColumn {
 
 impl TableViewItem<ClockEntryColumn> for ClockEntry {
     fn to_column(&self, column: ClockEntryColumn) -> String {
-        let granularity = Granularity::OCD;
         match column {
-            ClockEntryColumn::From => format::format_naive_time(granularity, self.from),
-            ClockEntryColumn::To => format::format_naive_time(granularity, self.to),
+            ClockEntryColumn::From => format::format_naive_time(self.granularity, self.from),
+            ClockEntryColumn::To => format::format_naive_time(self.granularity, self.to),
             ClockEntryColumn::Description => self.description.to_string(),
-            ClockEntryColumn::Duration => format::format_hms(Granularity::OCD, self.duration().num_seconds()),
+            ClockEntryColumn::Duration => format::format_hms(self.granularity, self.duration().num_seconds()),
             ClockEntryColumn::IsClocked => if self.is_clocked { "[x]".to_string() } else { "[ ]".to_string() },
         }
     }
@@ -90,15 +89,16 @@ fn edit_entry(s: &mut Cursive, index: usize) {
 }
 
 pub fn add_new_entry(s: &mut Cursive) {
+    let granularity = granularity_picker::get_granularity(s);
     let template_entry: Option<ClockEntry> = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         t.item().map(|it| t.borrow_item(it).map(|it| ClockEntry {
             from: it.to,
             to: it.to.add(Duration::minutes(60)),
             description: String::from(""),
             is_clocked: false,
+            granularity: granularity,
         })).flatten()
     }).unwrap();
-    let granularity = granularity_picker::get_granularity(s);
 
     s.add_layer(
         clock_entry_form::new(
@@ -115,7 +115,8 @@ fn submit_clock_entry(s: &mut Cursive, index: Option<usize>) {
         from: time_picker::time_picker_value(s, ClockEntryColumn::From),
         to: time_picker::time_picker_value(s, ClockEntryColumn::To),
         description: input::text_area_value(s, ClockEntryColumn::Description),
-        is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked) ,
+        is_clocked: input::checkbox_value(s, ClockEntryColumn::IsClocked),
+        granularity: granularity_picker::get_granularity(s)
     };
     s.call_on_name(CLOCK_ENTRIES_TABLE,   |table: &mut TableView<ClockEntry, ClockEntryColumn>| {
         index.map(|i| table.remove_item(i));

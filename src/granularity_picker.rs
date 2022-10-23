@@ -61,6 +61,7 @@ pub fn get_granularity(s: &mut Cursive) -> Granularity {
 pub fn normalize_for_granularity(item: &mut ClockEntry, granularity: Granularity) {
     item.from = normalize(item.from, granularity);
     item.to = normalize(item.to, granularity);
+    item.granularity = granularity;
 }
 
 fn normalize(it: NaiveTime, granularity: Granularity) -> NaiveTime {
