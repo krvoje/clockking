@@ -17,7 +17,7 @@ pub enum Granularity {
     Reasonable,
     Detailed,
     Paranoid,
-    OCD,
+    Ocd,
     Scientific,
 }
 
@@ -33,19 +33,19 @@ fn create_view(selected_granularity: Granularity) -> NamedView<SelectView<Granul
     view.add_item("Reasonable (30m)", Granularity::Reasonable);
     view.add_item("Detailed (15m)", Granularity::Detailed);
     view.add_item("Paranoid (5m)", Granularity::Paranoid);
-    view.add_item("OCD (1m)", Granularity::OCD);
+    view.add_item("OCD (1m)", Granularity::Ocd);
     view.add_item("Scientific (1s)", Granularity::Scientific);
     view.set_selection(selected_granularity as usize);
 
     view.on_submit(move |s, granularity| {
-        select_granularity(s, granularity.clone());
+        select_granularity(s, *granularity);
     }).with_name(GRANULARITY)
 }
 
 fn select_granularity(s: &mut Cursive, granularity: Granularity) {
     s.call_on_name(clock_entries_table::CLOCK_ENTRIES_TABLE, |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
         for item in t.borrow_items_mut() {
-            normalize_for_granularity(item, granularity.clone());
+            normalize_for_granularity(item, granularity);
         };
     }).expect("The Clock entries table should be defined");
     app_context::fetch(s).normalize_recording(granularity);
@@ -86,7 +86,7 @@ fn normalize(it: NaiveTime, granularity: Granularity) -> NaiveTime {
                 .with_second(0).unwrap()
                 .with_nanosecond(0).unwrap()
         },
-        Granularity::OCD => {
+        Granularity::Ocd => {
             it.with_second(0).unwrap()
                 .with_nanosecond(0).unwrap()
         },
@@ -125,7 +125,7 @@ mod test {
                         NaiveTime::from_hms(hour, minute / 5 * 5, 0)
                     );
                     assert_eq!(
-                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::OCD),
+                        normalize(NaiveTime::from_hms(hour, minute, second), Granularity::Ocd),
                         NaiveTime::from_hms(hour, minute, 0)
                     );
                     assert_eq!(

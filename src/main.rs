@@ -42,7 +42,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     siv.focus_name(CLOCK_ENTRIES_TABLE)?;
     autosave::start_autosave_loop(&siv);
-    Ok(siv.run())
+    siv.run();
+    Ok(())
 }
 
 fn strip_layer(s: &mut Cursive) {

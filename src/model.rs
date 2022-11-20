@@ -24,12 +24,12 @@ impl GlobalContext {
     }
 
     pub(crate) fn delete(&mut self, clock_entry: Option<ClockEntry>) {
-        clock_entry.map(|it| {
+        if let Some(it) = clock_entry {
             if self.deleted.len() >= UNDO_BUFFER_SIZE {
                 self.deleted.pop_front();
             }
             self.deleted.push_back(it);
-        });
+        }
     }
 
     pub(crate) fn undo(&mut self) -> Option<ClockEntry> {

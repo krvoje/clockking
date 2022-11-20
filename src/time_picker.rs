@@ -33,7 +33,7 @@ pub fn time_picker_value(s: &mut Cursive, col: ClockEntryColumn) -> NaiveTime {
     let granularity = granularity_picker::get_granularity(s);
     s.call_on_name(col.as_str(), |e: &mut ResizedView<SelectView>| {
         parse_time(granularity, e.get_inner().selection().expect("Nothing selected in time field").as_str())
-    }).expect(&format!("{} should be defined", col.as_str()))
+    }).unwrap_or_else(|| panic!("{} should be defined", col.as_str()))
 }
 
 pub fn parse_time(granularity: Granularity, value: &str) -> NaiveTime {
@@ -48,7 +48,7 @@ pub fn parse_time(granularity: Granularity, value: &str) -> NaiveTime {
         Granularity::Reasonable => {time.with_minute(time.minute() / 30 * 30).unwrap().with_second(0).unwrap()}
         Granularity::Detailed => {time.with_minute(time.minute() / 15 * 15).unwrap().with_second(0).unwrap()}
         Granularity::Paranoid => {time.with_minute(time.minute() / 5 * 5).unwrap().with_second(0).unwrap()}
-        Granularity::OCD => {time.with_second(0).unwrap()}
+        Granularity::Ocd => {time.with_second(0).unwrap()}
         Granularity::Scientific => time,
     }
 }
@@ -69,7 +69,7 @@ fn daily_clock_entries(granularity: Granularity) -> Vec<String> {
         Granularity::Reasonable => 30,
         Granularity::Detailed => 15,
         Granularity::Paranoid => 5,
-        Granularity::OCD => 1,
+        Granularity::Ocd => 1,
         Granularity::Scientific => 1,
     };
     let second_step = match granularity {
@@ -145,7 +145,7 @@ mod parse_time_test {
         (0..24).for_each(|hour| {
             (0..60).for_each(move |minute| {
                 assert_eq!(
-                    parse_time(Granularity::OCD, format!("{:02$}:{:02$}", hour, minute, 2).as_str()),
+                    parse_time(Granularity::Ocd, format!("{:02$}:{:02$}", hour, minute, 2).as_str()),
                     NaiveTime::from_hms(hour, minute, 0)
                 )
             })
@@ -219,7 +219,7 @@ mod daily_clock_entries_test {
     #[test]
     fn daily_clock_entries_ocd() {
         assert_eq!(
-            daily_clock_entries(Granularity::OCD),
+            daily_clock_entries(Granularity::Ocd),
             (0..24).flat_map(|hour|{
                 (0..60).map(|minute|{
                     format!("{:02$}:{:02$}", hour, minute, 2)

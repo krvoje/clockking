@@ -5,14 +5,14 @@ use crate::clock_entries_table::ClockEntryColumn;
 
 pub fn text_area_input(col: ClockEntryColumn, value:Option<String>) -> NamedView<TextArea> {
     TextArea::new()
-        .content(value.clone().get_or_insert(format!("")).to_string())
+        .content(value.unwrap_or_default())
         .with_name(col.as_str())
 }
 
 pub fn text_area_value(s: &mut Cursive, col: ClockEntryColumn) -> String {
     s.call_on_name(col.as_str(), |e: &mut TextArea| {
         e.get_content().to_string()
-    }).expect(&format!("{} should be defined", col.as_str()))
+    }).unwrap_or_else(|| panic!("{} should be defined", col.as_str()))
 }
 
 pub fn checkbox_input(col: ClockEntryColumn, value: Option<bool>) -> NamedView<Checkbox> {
@@ -22,5 +22,5 @@ pub fn checkbox_input(col: ClockEntryColumn, value: Option<bool>) -> NamedView<C
 pub fn checkbox_value(s: &mut Cursive, col: ClockEntryColumn) -> bool {
     s.call_on_name(col.as_str(), |e: &mut Checkbox| {
         e.is_checked()
-    }).expect(&format!("{} should be defined", col.as_str()))
+    }).unwrap_or_else(|| panic!("{} should be defined", col.as_str()))
 }

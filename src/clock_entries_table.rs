@@ -78,7 +78,7 @@ pub fn new(model: ClockKing) -> ResizedView<NamedView<TableView<ClockEntry, Cloc
 fn edit_entry(s: &mut Cursive, index: usize) {
     let granularity = granularity_picker::get_granularity(s);
     let form = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-        let current_entry = t.borrow_item(index).map(|it| it.clone());
+        let current_entry = t.borrow_item(index).cloned();
         clock_entry_form::new(
             "Edit Clock Entry ⏰",
             current_entry.as_ref(),
@@ -91,13 +91,13 @@ fn edit_entry(s: &mut Cursive, index: usize) {
 pub fn add_new_entry(s: &mut Cursive) {
     let granularity = granularity_picker::get_granularity(s);
     let template_entry: Option<ClockEntry> = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-        t.item().map(|it| t.borrow_item(it).map(|it| ClockEntry {
+        t.item().and_then(|it| t.borrow_item(it).map(|it| ClockEntry {
             from: it.to,
             to: it.to.add(Duration::minutes(60)),
             description: String::from(""),
             is_clocked: false,
-            granularity: granularity,
-        })).flatten()
+            granularity,
+        }))
     }).unwrap();
 
     s.add_layer(
@@ -134,7 +134,7 @@ pub fn delete_current_entry(s: &mut Cursive) {
             |s| {
                 s.pop_layer();
                 let deleted = s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-                    t.item().map(|index| t.remove_item(index)).flatten()
+                    t.item().and_then(|index| t.remove_item(index))
                 }).unwrap();
                 app_context::fetch(s).delete(deleted);
                 stats_view::update_stats(s)
@@ -143,22 +143,20 @@ pub fn delete_current_entry(s: &mut Cursive) {
 }
 
 pub fn undo_delete(s: &mut Cursive) {
-    app_context::fetch(s)
-        .undo()
-        .map(|deleted| {
+    if let Some(deleted) = app_context::fetch(s).undo() { 
             s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
                 t.insert_item(deleted);
-            });
-        });
+            }); 
+    }
     stats_view::update_stats(s);
 }
 
 pub fn mark_current_entry_as_clocked(s: &mut Cursive) {
     s.call_on_name(CLOCK_ENTRIES_TABLE, move |t: &mut TableView<ClockEntry, ClockEntryColumn>| {
-        t.item().map(|index| {
+        if let Some(index) = t.item() {
             let mut item = t.borrow_item_mut(index).expect("No entry at current index");
             item.is_clocked = !item.is_clocked;
-        });
+        }
     }).unwrap();
     stats_view::update_stats(s);
 }

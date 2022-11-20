@@ -20,7 +20,7 @@ fn start_recording(s: &mut Cursive) {
         to: time_picker::now_naive_time(granularity),
         description: String::from(""),
         is_clocked: false,
-        granularity: granularity
+        granularity
     };
     s.add_layer(
         clock_entry_form::new(

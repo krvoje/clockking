@@ -45,7 +45,7 @@ pub fn update_stats(s: &mut Cursive) {
             format::format_naive_time(granularity, recording.from)
         )
     } else {
-        format!("No recording in progress.")
+        "No recording in progress.".to_string()
     };
     s.call_on_name(RECORDING_STATUS, move |t: &mut TextView| {
         t.set_content(recording_status);

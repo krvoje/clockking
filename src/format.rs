@@ -16,7 +16,7 @@ pub fn format_hms(granularity: Granularity, total_seconds: i64) -> String {
         Granularity::Reasonable => format!("{}h {:02$}m", hours, minutes / 30 * 30, 2),
         Granularity::Detailed => format!("{}h {:02$}m", hours, minutes / 15 * 15, 2),
         Granularity::Paranoid => format!("{}h {:02$}m", hours, minutes / 5 * 5, 2),
-        Granularity::OCD => format!("{}h {:02$}m", hours, minutes, 2),
+        Granularity::Ocd => format!("{}h {:02$}m", hours, minutes, 2),
         Granularity::Scientific => format!("{}h {:03$}m {:03$}s", hours, minutes, seconds, 2),
     }
 }
@@ -31,7 +31,7 @@ pub fn format_clock(granularity: Granularity, hours: u32, minutes: u32, seconds:
         Granularity::Reasonable => format!("{:02$}:{:02$}", hours, (minutes / 30) * 30, 2),
         Granularity::Detailed => format!("{:02$}:{:02$}", hours, (minutes / 15) * 15, 2),
         Granularity::Paranoid => format!("{:02$}:{:02$}", hours, (minutes / 5) * 5, 2),
-        Granularity::OCD => format!("{:02$}:{:02$}", hours, minutes, 2),
+        Granularity::Ocd => format!("{:02$}:{:02$}", hours, minutes, 2),
         Granularity::Scientific => format!("{:03$}:{:03$}:{:03$}", hours, minutes, seconds, 2),
     }
 }
@@ -103,7 +103,7 @@ mod format_hms_test {
             (0..60).for_each(|minute| {
                 (0..60).for_each(|second| {
                     assert_eq!(
-                        format_hms(Granularity::OCD, hour * 3600 + minute * 60 + second),
+                        format_hms(Granularity::Ocd, hour * 3600 + minute * 60 + second),
                         format!("{}h {:02$}m", hour, minute, 2)
                     )
                 })
@@ -154,7 +154,7 @@ mod format_clock_test {
                         format!("{:02$}:{:02$}", hour, minute / 5 * 5, 2)
                     );
                     assert_eq!(
-                        format_clock(Granularity::OCD, hour, minute, second),
+                        format_clock(Granularity::Ocd, hour, minute, second),
                         format!("{:02$}:{:02$}", hour, minute, 2)
                     );
                     assert_eq!(
