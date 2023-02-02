@@ -1,5 +1,7 @@
 # Clock King
 
+If you happen to like the app, you can [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/krvoje)
+
 [![run-tests](https://github.com/krvoje/clockking/actions/workflows/main.yaml/badge.svg?branch=master)](https://github.com/krvoje/clockking/actions/workflows/main.yaml)
 
 A console app for jotting down hours tracking for the day. 
