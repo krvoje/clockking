@@ -1,4 +1,5 @@
 extern crate cursive_table_view;
+extern crate cursive_calendar_view;
 
 use std::error::Error;
 
@@ -23,6 +24,7 @@ mod clock_entries_table;
 mod stats_view;
 mod main_dialog;
 mod record;
+mod date_picker;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut siv = Cursive::default();

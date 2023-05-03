@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
-use chrono::{Duration, NaiveTime};
+use chrono::{Duration, NaiveDate, NaiveTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::{Granularity, granularity_picker};
@@ -69,11 +69,21 @@ impl GlobalContext {
     pub(crate) fn ongoing_recording(&self) -> Option<ClockEntry> {
         self.recording.clone()
     }
+
+    pub(crate) fn entries(&self, date: NaiveDate) -> Vec<ClockEntry> {
+        self.last_saved.clock_entries_per_day.get(&date).map(|v| v.clone()).unwrap_or(vec![])
+    }
+
+    pub(crate) fn update_entries(&self, date: NaiveDate, entries: Vec<ClockEntry>) -> HashMap<NaiveDate, Vec<ClockEntry>> {
+        let mut result = self.last_saved.clock_entries_per_day.clone();
+        result.insert(date, entries);
+        result
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct ClockKing {
-    pub clock_entries: Vec<ClockEntry>,
+    pub clock_entries_per_day: HashMap<NaiveDate, Vec<ClockEntry>>,
     pub granularity: Granularity,
 }
 

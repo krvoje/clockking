@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::ops::Add;
 
-use chrono::Duration;
+use chrono::{Duration, Utc};
 use cursive::align::HAlign;
 use cursive::Cursive;
 use cursive::traits::{Nameable, Resizable};
@@ -56,13 +56,14 @@ impl TableViewItem<ClockEntryColumn> for ClockEntry {
 }
 
 pub fn new(model: ClockKing) -> ResizedView<NamedView<TableView<ClockEntry, ClockEntryColumn>>> {
+    let todays_entries: Vec<ClockEntry> = model.clock_entries_per_day.get(&Utc::now().date().naive_local()).map(|v| v.clone()).unwrap_or(vec![]);
     let mut table: TableView<ClockEntry, ClockEntryColumn> = TableView::<ClockEntry, ClockEntryColumn>::new()
         .column(ClockEntryColumn::From, ClockEntryColumn::From.as_str(), |c| {c.width_percent(10).align(HAlign::Center) })
         .column(ClockEntryColumn::To, ClockEntryColumn::To.as_str(), |c| {c.width_percent(10).align(HAlign::Center)})
         .column(ClockEntryColumn::Description, ClockEntryColumn::Description.as_str(), |c| {c.align(HAlign::Center)})
         .column(ClockEntryColumn::Duration, ClockEntryColumn::Duration.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
         .column(ClockEntryColumn::IsClocked, ClockEntryColumn::IsClocked.as_str(), |c| {c.width_percent(12).align(HAlign::Center)})
-        .items(model.clock_entries)
+        .items(todays_entries)
         ;
 
 
@@ -108,6 +109,26 @@ pub fn add_new_entry(s: &mut Cursive) {
             move |s: &mut Cursive| submit_clock_entry(s, None)
         )
     );
+}
+
+pub fn select_date(s: &mut Cursive) {
+    date_picker::new(initial_clock_king.clock_entries_per_day.keys().last().copied())
+    let granularity = granularity_picker::get_granularity(s);
+    let date_picker = DatePicker::new(
+        "Select Date",
+        Utc::now().date(),
+        move |s: &mut Cursive, date: &NaiveDate| {
+            s.pop_layer();
+            s.add_layer(
+                clock_entries::new(
+                    app_context::get_model(s).unwrap(),
+                    date.clone(),
+                    granularity
+                )
+            );
+        }
+    );
+    s.add_layer(date_picker);
 }
 
 fn submit_clock_entry(s: &mut Cursive, index: Option<usize>) {

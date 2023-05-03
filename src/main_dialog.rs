@@ -1,16 +1,18 @@
+use chrono::Utc;
 use cursive::Cursive;
 use cursive::direction::Orientation;
 use cursive::event::Key;
 use cursive::traits::{Nameable, Resizable};
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, OnEventView};
 
-use crate::{clock_entries_table, ClockKing, db, granularity_picker, record, stats_view};
+use crate::{clock_entries_table, ClockKing, date_picker, db, granularity_picker, record, stats_view};
 
 pub const RECORD_BUTTON: &str = "RECORD_BUTTON";
 
 pub fn new(initial_clock_king: ClockKing) -> Dialog {
     Dialog::around(
         LinearLayout::new(Orientation::Vertical)
+            .child(Button::new("Select date", clock_entries_table::select_date))
             .child(granularity_picker::new(initial_clock_king.granularity))
             .child(
                 OnEventView::new(clock_entries_table::new(initial_clock_king))
